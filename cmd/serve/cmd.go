@@ -28,10 +28,12 @@ import (
 var (
 	Cmd = &cobra.Command{
 		Use:   "serve",
-		Short: "Serve a UI for creating mappings between OSCAL components and security rule IDs",
+		Short: "Serve a HTTP-based UI for creating mappings between OSCAL components and security rule IDs",
+		RunE:  server,
 	}
+	port int
 )
 
 func init() {
-	Cmd.AddCommand(serveHTTPCmd)
+	Cmd.PersistentFlags().IntVarP(&port, "port", "p", 8000, "Port to run the HTTP server on")
 }

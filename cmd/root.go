@@ -35,15 +35,12 @@ const (
 
 var (
 	pluginsDirectory string
-	sspFilePath      string
-)
-
-var (
-	rootCmd = &cobra.Command{
+	rootCmd          = &cobra.Command{
 		Use:     "finch",
-		Short:   "Finch is a CLI tool for creating OSCAL components, mapping OSCAL components to security rules, and generating security suppression files.",
+		Short:   "Finch is a tool for mapping OSCAL components to security rules and generating security suppression files.",
 		Version: fmt.Sprintf("%s", finchVersion),
 	}
+	sspFilePath string
 )
 
 func Execute() {
@@ -54,7 +51,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&sspFilePath, "ssp", "", "eMASS_OSCAL_Profile.json", "File path to System Security Plan (in OSCAL format)")
+	rootCmd.PersistentFlags().StringVarP(&sspFilePath, "ssp", "", "", "File path to System Security Plan (in OSCAL format)")
 	rootCmd.PersistentFlags().StringVarP(&pluginsDirectory, "plugins-dir", "", "plugins", "Plugins directory")
 	rootCmd.AddCommand(serve.Cmd)
 }

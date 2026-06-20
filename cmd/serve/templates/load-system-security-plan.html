@@ -1,0 +1,12 @@
+<section id="load-ssp">
+  <details {{if not .SystemSecurityPlanFilePath}}open{{end}}>
+    <summary>
+      <h2>Load System Security Plan</h2>
+    </summary>
+    <form hx-post="/system-security-plan" hx-encoding="multipart/form-data" hx-target="#ssp-data">
+      <input type="file" accept=".json" name="System-Security-Plan">
+      <button type="submit">Load</button>
+    </form>
+    {{template "show-system-security-plan.html" .}}
+  </details>
+</section>

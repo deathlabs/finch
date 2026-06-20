@@ -1,0 +1,12 @@
+<div id="ssp-data">
+  {{if .SystemSecurityPlanFilePath}}
+    System Security Plan Loaded: {{.SystemSecurityPlanFilePath}}
+    {{if .SystemSecurityPlan}}
+      {{printf "%+v" .SystemSecurityPlan}}
+    {{else}}
+      <p>Failed to load System Security Plan.</p>
+    {{end}}
+  {{else}}
+    <p>Please load a System Security Plan.</p>
+  {{end}}
+</div>

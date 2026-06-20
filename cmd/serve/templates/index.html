@@ -5,59 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>Finch</title>
-
-    <!-- Pico CSS -->
-    <link rel="stylesheet" href="static/pico.min.css">
-    <!-- ./ Pico CSS -->
-
-    <!-- Pico CSS Theme -->
-    <script src="static/minimal-theme-switcher.js"></script>
-    <!-- ./ Theme -->
-
-    <!-- HTMX -->
-    <script src="static/htmx.min.js"></script>
-    <!-- ./ HTMX -->
-
+    <link rel="icon" type="image/png" href="images/favicon.ico">
+    <script src="scripts/minimal-theme-switcher.js"></script>
+    <script src="scripts/htmx.min.js"></script>
+    <link rel="stylesheet" href="styles/pico.min.css">
   </head>
 
   <body>
-    <!-- Header -->
     <header class="container">
       <nav>
-        <ul>
-            <li><strong>Finch</strong></li>
-        </ul>
-        <ul>
-            <li><a href="#">About</a></li>
-        </ul>
+        <ul><li><strong>Finch</strong></li></ul>
+        <ul><li><button hx-post="/reset" hx-target="#main-content" hx-swap="innerHTML" hx-confirm="Are you sure? This will clear the loaded System Security Plan.">Reset</button></li></ul>
       </nav>
     </header>
-    <!-- ./ Header -->
 
-    <!-- Main -->
-    <main class="container">
-
-      <!-- Upload SSP -->
-      <section id="upload-ssp">
-        <h2>System Security Plan</h2>
-        <form hx-post="/system-security-plan" hx-encoding="multipart/form-data" hx-target="#ssp-data">
-            <input type="file" accept=".json" name="System-Security-Plan">
-            <button type="submit">Upload</button>
-        </form>
-      </section>
-
-      <div id="ssp-data">
-        Original content here.
-      </div>
-      <!-- ./ Upload SSP -->
-
+    <main class="container" id="main-content">
+      {{template "load-system-security-plan.html" .}}
+      // TODO: add remaining steps (make sure to update how "reset" works).
     </main>
-    <!-- ./ Main -->
 
-    <!-- Footer -->
     <footer class="container">
-      <small >Built with <a href="https://picocss.com">Pico</a>
+      <small>Built with <a href="https://picocss.com">Pico</a></small>
     </footer>
-    <!-- ./ Footer -->
   </body>
 </html>
