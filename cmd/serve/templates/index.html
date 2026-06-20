@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Finch</title>
+
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="static/pico.min.css">
+    <!-- ./ Pico CSS -->
+
+    <!-- Pico CSS Theme -->
+    <script src="static/minimal-theme-switcher.js"></script>
+    <!-- ./ Theme -->
+
+    <!-- HTMX -->
+    <script src="static/htmx.min.js"></script>
+    <!-- ./ HTMX -->
+
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header class="container">
+      <nav>
+        <ul>
+            <li><strong>Finch</strong></li>
+        </ul>
+        <ul>
+            <li><a href="#">About</a></li>
+        </ul>
+      </nav>
+    </header>
+    <!-- ./ Header -->
+
+    <!-- Main -->
+    <main class="container">
+
+      <!-- Upload SSP -->
+      <section id="upload-ssp">
+        <h2>System Security Plan</h2>
+        <form hx-post="/system-security-plan" hx-encoding="multipart/form-data" hx-target="#ssp-data">
+            <input type="file" accept=".json" name="System-Security-Plan">
+            <button type="submit">Upload</button>
+        </form>
+      </section>
+
+      <div id="ssp-data">
+        Original content here.
+      </div>
+      <!-- ./ Upload SSP -->
+
+    </main>
+    <!-- ./ Main -->
+
+    <!-- Footer -->
+    <footer class="container">
+      <small >Built with <a href="https://picocss.com">Pico</a>
+    </footer>
+    <!-- ./ Footer -->
+  </body>
+</html>
