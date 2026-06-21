@@ -1,0 +1,55 @@
+<article data-target="component" style="position: relative; margin-bottom: 2rem;">
+  <button type="button" 
+    class="outline contrast"
+    style="position: absolute; top: 1rem; right: 1rem; padding: 0.25rem 0.5rem; width: auto; font-size: 0.75rem; margin-bottom: 0;" 
+    onclick="this.closest('[data-target=\'component\']').remove()">
+    Remove
+  </button>
+
+  <div class="grid">
+    <label>
+      Title
+      <input type="text" name="component_title" required />
+    </label>
+    <label>
+      Type
+      <input type="text" name="component_type" placeholder="software, service, hardware..." required />
+    </label>
+  </div>
+
+  <div class="grid">
+    <label>
+      Description
+      <textarea name="component_description" rows="2"></textarea>
+    </label>
+    <label>
+      Purpose
+      <textarea name="component_purpose" rows="2"></textarea>
+    </label>
+  </div>
+
+  <div style="margin-top: 1rem;">
+    <label style="font-weight: bold; text-transform: uppercase; color: var(--pico-muted-color); font-size: 0.85rem; margin-bottom: 0.5rem;">
+      Select Implemented Controls
+    </label>
+    
+    <div style="height: 200px; max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--pico-border-color); padding: 0.5rem 0.75rem; border-radius: var(--pico-border-radius); background-color: var(--pico-card-background-color);">
+      {{range .AvailableControls}}
+      <div style="display: block; margin-bottom: 0.25rem; padding: 0; list-style: none;">
+        <label for="control_{{$.Index}}_{{.}}" style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 0; padding: 0.25rem 0; cursor: pointer; width: 100%;">
+          <input type="checkbox" 
+                 id="control_{{$.Index}}_{{.}}"
+                 name="component_controls_{{$.Index}}" 
+                 value="{{.}}" 
+                 style="margin-bottom: 0; width: auto; height: auto; flex-shrink: 0;">
+          <code style="font-weight: bold; font-family: var(--pico-font-family-monospace); font-size: 0.85rem;">{{.}}</code>
+        </label>
+      </div>
+      {{else}}
+      <p style="font-style: italic; color: var(--pico-muted-color); margin: 0;">
+        <small>No controls parsed from System Security Plan.</small>
+      </p>
+      {{end}}
+    </div>
+  </div>
+</article>

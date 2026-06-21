@@ -22,8 +22,9 @@ THE SOFTWARE.
 package models
 
 type ComponentDefinition struct {
-	Title       string `yaml:"title"`
-	Type        string `yaml:"type"`
-	Description string `yaml:"description,omitempty"`
-	Purpose     string `yaml:"purpose,omitempty"`
+	Title               string   `yaml:"title"`
+	Type                string   `yaml:"type"`
+	Description         string   `yaml:"description,omitempty"`
+	Purpose             string   `yaml:"purpose,omitempty"`
+	ImplementedControls []string `yaml:"implemented_controls,omitempty"`
 }

@@ -1,0 +1,33 @@
+<!-- Show the stepper. -->
+<nav aria-label="breadcrumb">
+  <ul>
+    {{range .Steps}}
+    <li{{if eq .Number $.CurrentStep}} aria-current="step"{{end}}>
+      {{if eq .Number $.CurrentStep}}
+        <strong>{{.Label}}</strong>
+      {{else if lt .Number $.CurrentStep}}
+        <!-- Show a green checkmark. -->
+        <span class="svg-success-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        {{.Label}}
+      {{else}}
+        {{.Label}}
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+</nav>
+
+<!-- Show the current step's content. -->
+{{if eq .CurrentStep 1}}
+  {{template "step-1.html" .}}
+{{else if eq .CurrentStep 2}}
+  {{template "step-2.html" .}}
+{{else if eq .CurrentStep 3}}
+  {{template "step-3.html" .}}
+{{else if eq .CurrentStep 4}}
+  {{template "step-4.html" .}}
+{{end}}

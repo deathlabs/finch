@@ -10,18 +10,9 @@
     <script src="scripts/htmx.min.js"></script>
     <link rel="stylesheet" href="styles/pico.min.css">
   </head>
-
   <body>
-    <header class="container">
-      <nav>
-        <ul><li><strong>Finch</strong></li></ul>
-        <ul><li><button hx-post="/reset" hx-target="#main-content" hx-swap="innerHTML" hx-confirm="Are you sure? This will clear the loaded System Security Plan.">Reset</button></li></ul>
-      </nav>
-    </header>
-
     <main class="container" id="main-content">
-      {{template "load-system-security-plan.html" .}}
-      // TODO: add remaining steps (make sure to update how "reset" works).
+      {{template "stepper.html" .}}
     </main>
 
     <footer class="container">
