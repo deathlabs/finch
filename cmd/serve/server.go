@@ -151,14 +151,15 @@ func getServer(cmd *cobra.Command) (*echo.Echo, error) {
 			return nil, err
 		}
 
-		// Init the state.
+		// Init the state, starting at the review step since the SSP is already loaded.
 		state = &State{
 			SystemSecurityPlan:         systemSecurityPlan,
 			SystemSecurityPlanFilePath: systemSecurityPlanFilePath,
+			CurrentStep:                2,
 		}
 	} else {
 		// Init the state without a System Security Plan.
-		state = &State{}
+		state = &State{CurrentStep: 1}
 	}
 
 	// Init an HTTP server.
@@ -174,14 +175,19 @@ func getServer(cmd *cobra.Command) (*echo.Echo, error) {
 		Validator: validator.New(),
 	}
 
-	// Set up middleware and routes.
+	// Set up middleware.
 	server.Use(middleware.RequestLogger())
+
+	// Set up routes.
 	server.GET("/", state.getIndex)
 	server.GET("/images/*", echo.WrapHandler(http.FileServer(http.FS(imagesDir))))
 	server.GET("/scripts/*", echo.WrapHandler(http.FileServer(http.FS(scriptsDir))))
 	server.GET("/styles/*", echo.WrapHandler(http.FileServer(http.FS(stylesDir))))
 	server.POST("/system-security-plan", state.postSystemSecurityPlan)
-	server.POST("/reset", state.postReset)
+	server.GET("/components/new-block", state.getComponentBlock)
+	server.POST("/back", state.postBack)
+	server.POST("/next", state.postNext)
+	server.POST("/export", state.postExport)
 
 	// Return the initialized HTTP server.
 	return server, nil

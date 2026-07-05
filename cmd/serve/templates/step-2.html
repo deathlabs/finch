@@ -1,0 +1,13 @@
+<form hx-post="/next" hx-target="#main-content" hx-swap="innerHTML">
+  {{template "stepper-buttons.html" .}}
+
+  {{ template "oscal-component-form.html" .InitialBlock }}
+
+  <button type="button" 
+    hx-get="/components/new-block" 
+    hx-target="#components-container" 
+    hx-swap="beforeend"
+    hx-vals='js:{index: document.querySelectorAll(".component-block").length}'>
+    + Create Another OSCAL Component
+  </button>
+</form>

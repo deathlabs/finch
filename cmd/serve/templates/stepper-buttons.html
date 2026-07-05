@@ -1,0 +1,8 @@
+<fieldset role="group">
+  <button type="button" class="secondary" hx-post="/back" hx-target="#main-content" hx-swap="innerHTML"{{if eq .CurrentStep 1}} disabled{{end}}>
+    Back
+  </button>
+  <button type="submit">
+    {{if eq .CurrentStep (len .Steps)}}Export{{else}}Next{{end}}
+  </button>
+</fieldset>

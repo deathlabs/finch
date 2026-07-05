@@ -1,0 +1,20 @@
+<form hx-post="/next" hx-target="#main-content" hx-swap="innerHTML">
+  {{template "stepper-buttons.html" .}}
+
+  {{range $index, $component := .Components}}
+    <details {{if eq $index 0}}open{{end}}>
+      <summary>{{$component.Title}}</summary>
+
+      {{range $.AvailableRules}}
+        <label>
+          <input type="checkbox" name="component_rules_{{$index}}" value="{{.}}">
+          <code>{{.}}</code>
+        </label>
+      {{else}}
+        <p><small>No security rules available.</small></p>
+      {{end}}
+    </details>
+  {{else}}
+    <p><small>No components created in the previous step.</small></p>
+  {{end}}
+</form>
