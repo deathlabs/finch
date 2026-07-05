@@ -27,4 +27,5 @@ type ComponentDefinition struct {
 	Description         string   `yaml:"description,omitempty"`
 	Purpose             string   `yaml:"purpose,omitempty"`
 	ImplementedControls []string `yaml:"implemented_controls,omitempty"`
+	MappedRules         []string `yaml:"mapped_rules,omitempty"`
 }

@@ -1,0 +1,46 @@
+<fieldset>
+  <label>
+    Component Title
+    <input type="text" name="component_title" required />
+  </label>
+
+  <fieldset>
+    <legend>Component Type</legend>
+    <label>
+      <input type="radio" name="component_type" value="software" checked />
+      Software
+    </label>
+    <label>
+      <input type="radio" name="component_type" value="service" />
+      Service
+    </label>
+    <label>
+      <input type="radio" name="component_type" value="hardware" />
+      Hardware
+    </label>
+  </fieldset>
+
+  <label>
+    Component Description
+    <input type="text" name="component_description" required />
+  </label>
+
+  <label>
+    Component Purpose
+    <input type="text" name="component_purpose" required />
+  </label>
+
+  <label>
+    Controls Implemented by this Component
+  </label>
+    {{range .AvailableControls}}
+      <label>
+        <input type="checkbox" name="component_control_{{$.Index}}" id="control_{{$.Index}}_{{.}}" value="{{.}}">
+        {{.}}
+      </label>
+    {{else}}
+    <p>
+      <small>No controls parsed from System Security Plan.</small>
+    </p>
+    {{end}}
+</fieldset>

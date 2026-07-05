@@ -37,7 +37,7 @@ type State struct {
 	CurrentStep                int
 	SystemSecurityPlanFilePath string
 	SystemSecurityPlan         *oscalTypes_1_1_3.SystemSecurityPlan
-	Components                 []models.ComponentDefinition // Stores user-created components
+	Components                 []models.ComponentDefinition
 }
 
 // ComponentBlockData is the data structure passed to the component form block template.
@@ -69,6 +69,8 @@ func (state *State) viewData() map[string]any {
 		"SystemSecurityPlanFilePath": state.SystemSecurityPlanFilePath,
 		"SystemSecurityPlan":         state.SystemSecurityPlan,
 		"InitialBlock":               ComponentBlockData{Index: 0, AvailableControls: state.getAvailableControlIDs()},
+		"Components":                 state.Components,
+		"AvailableRules":             state.getAvailableRuleIDs(),
 	}
 }
 
@@ -144,6 +146,18 @@ func (state *State) getAvailableControlIDs() []string {
 	return controlIDs
 }
 
+// getAvailableRuleIDs returns a list of all security rule IDs available for mapping.
+func (state *State) getAvailableRuleIDs() []string {
+	return []string{
+		"10021", // X-Content-Type-Options Header Missing
+		"10062", // PII Disclosure (RFC 1918 IP Address)
+		"40012", // Cross Site Scripting (Reflected)
+		"40003", // Directory Browsing
+		"90019", // Server Side Code Injection
+		"90022", // Application Error Disclosure
+	}
+}
+
 // getComponentBlock is the handler for the "/components/new-block" endpoint.
 func (state *State) getComponentBlock(context *echo.Context) error {
 	var (
@@ -164,7 +178,7 @@ func (state *State) getComponentBlock(context *echo.Context) error {
 	}
 
 	// Returns just the individual block markup.
-	return context.Render(http.StatusOK, "component-form-block.html", data)
+	return context.Render(http.StatusOK, "oscal-component-form.html", data)
 }
 
 // postBack is the handler for the "/back" endpoint and moves the stepper back one step.
@@ -220,6 +234,17 @@ func (state *State) postNext(context *echo.Context) error {
 		}
 
 		state.Components = parsedComponents
+	}
+
+	// If transitioning out of Step 3, parse and commit rule mappings to each component.
+	if state.CurrentStep == 3 {
+		var ruleKey string
+		for index = range state.Components {
+			ruleKey = fmt.Sprintf("component_rules_%d", index)
+			if rules, ok := request.Form[ruleKey]; ok {
+				state.Components[index].MappedRules = rules
+			}
+		}
 	}
 
 	// Move to the next step if not already at the end of the stepper.
