@@ -194,14 +194,14 @@ func (state *State) postNext(context *echo.Context) error {
 	var (
 		component        models.ComponentDefinition
 		controlKey       string
-		descriptions     []string
+		descriptionKey   string
 		err              error
 		index            int
 		parsedComponents []models.ComponentDefinition
-		purposes         []string
+		purposeKey       string
 		request          *http.Request
-		titles           []string
-		types            []string
+		titleKey         string
+		typeKey          string
 	)
 
 	// Parse the form data from the request.
@@ -212,25 +212,33 @@ func (state *State) postNext(context *echo.Context) error {
 
 	// If transitioning out of Step 2, parse and commit the components to state.
 	if state.CurrentStep == 2 {
-		titles = request.Form["component_title"]
-		types = request.Form["component_type"]
-		descriptions = request.Form["component_description"]
-		purposes = request.Form["component_purpose"]
-
-		for index = 0; index < len(titles); index++ {
-			component = models.ComponentDefinition{
-				Title:       titles[index],
-				Type:        types[index],
-				Description: descriptions[index],
-				Purpose:     purposes[index],
+		index = 0
+		for {
+			titleKey = fmt.Sprintf("component_title_%d", index)
+			if _, ok := request.Form[titleKey]; !ok {
+				break
 			}
 
-			// Capture checkboxes mapped to this specific block index.
-			controlKey = fmt.Sprintf("component_controls_%d", index)
+			component = models.ComponentDefinition{
+				Title: request.Form.Get(titleKey),
+			}
+
+			typeKey = fmt.Sprintf("component_type_%d", index)
+			component.Type = request.Form.Get(typeKey)
+
+			descriptionKey = fmt.Sprintf("component_description_%d", index)
+			component.Description = request.Form.Get(descriptionKey)
+
+			purposeKey = fmt.Sprintf("component_purpose_%d", index)
+			component.Purpose = request.Form.Get(purposeKey)
+
+			controlKey = fmt.Sprintf("component_control_%d", index)
 			if controls, ok := request.Form[controlKey]; ok {
 				component.ImplementedControls = controls
 			}
+
 			parsedComponents = append(parsedComponents, component)
+			index++
 		}
 
 		state.Components = parsedComponents

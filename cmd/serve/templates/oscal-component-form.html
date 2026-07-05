@@ -1,33 +1,33 @@
-<fieldset>
+<fieldset class="component-block">
   <label>
     Component Title
-    <input type="text" name="component_title" required />
+    <input type="text" name="component_title_{{.Index}}" required />
   </label>
 
   <fieldset>
     <legend>Component Type</legend>
     <label>
-      <input type="radio" name="component_type" value="software" checked />
+      <input type="radio" name="component_type_{{.Index}}" value="software" checked />
       Software
     </label>
     <label>
-      <input type="radio" name="component_type" value="service" />
+      <input type="radio" name="component_type_{{.Index}}" value="service" />
       Service
     </label>
     <label>
-      <input type="radio" name="component_type" value="hardware" />
+      <input type="radio" name="component_type_{{.Index}}" value="hardware" />
       Hardware
     </label>
   </fieldset>
 
   <label>
     Component Description
-    <input type="text" name="component_description" required />
+    <input type="text" name="component_description_{{.Index}}" required />
   </label>
 
   <label>
     Component Purpose
-    <input type="text" name="component_purpose" required />
+    <input type="text" name="component_purpose_{{.Index}}" required />
   </label>
 
   <label>
