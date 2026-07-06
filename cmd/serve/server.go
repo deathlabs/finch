@@ -92,21 +92,6 @@ func loadSystemSecurityPlan(path string) (*oscalTypes_1_1_3.SystemSecurityPlan, 
 	return &fileData.SystemSecurityPlan, nil
 }
 
-// getPlugins gets the plugins directory from the command line flags.
-func getPlugins(cmd *cobra.Command) (string, error) {
-	var (
-		err        error
-		pluginsDir string
-	)
-
-	pluginsDir, err = cmd.Flags().GetString("plugins-dir")
-	if err != nil {
-		return "", err
-	}
-
-	return pluginsDir, nil
-}
-
 // getAddress gets the address to listen on from the command line flags.
 func getAddress(cmd *cobra.Command) (string, error) {
 	var (
