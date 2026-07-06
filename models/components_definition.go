@@ -22,10 +22,11 @@ THE SOFTWARE.
 package models
 
 type ComponentDefinition struct {
-	Title               string   `yaml:"title"`
-	Type                string   `yaml:"type"`
-	Description         string   `yaml:"description,omitempty"`
-	Purpose             string   `yaml:"purpose,omitempty"`
-	ImplementedControls []string `yaml:"implemented_controls,omitempty"`
-	MappedRules         []string `yaml:"mapped_rules,omitempty"`
+	UUID                                  string      `yaml:"uuid"`
+	Title                                 string      `yaml:"title"`
+	Type                                  string      `yaml:"type"`
+	Description                           string      `yaml:"description,omitempty"`
+	Purpose                               string      `yaml:"purpose"`
+	ControlsImplementedByThisComponent    []string    `yaml:"controls_implemented_by_this_component"`
+	SecurityRulesMitigatedByThisComponent []ToolRules `yaml:"security_rules_mitigated_by_this_component"`
 }

@@ -1,7 +1,9 @@
 <form hx-post="/next" hx-target="#main-content" hx-swap="innerHTML">
   {{template "stepper-buttons.html" .}}
 
-  {{ template "oscal-component-form.html" .InitialBlock }}
+  <div id="components-container">
+    {{ template "oscal-component-form.html" .InitialBlock }}
+  </div>
 
   <button type="button" 
     hx-get="/components/new-block" 

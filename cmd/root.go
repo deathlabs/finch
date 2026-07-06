@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/deathlabs/finch/cmd/serve"
@@ -38,7 +37,7 @@ var (
 	rootCmd          = &cobra.Command{
 		Use:     "finch",
 		Short:   "Finch is a tool for mapping OSCAL components to security rules and generating security suppression files.",
-		Version: fmt.Sprintf("%s", finchVersion),
+		Version: finchVersion,
 	}
 	sspFilePath string
 )

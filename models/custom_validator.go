@@ -31,9 +31,7 @@ type CustomValidator struct {
 }
 
 func (cv *CustomValidator) Validate(i any) error {
-	var err error
-
-	err = cv.Validator.Struct(i)
+	var err = cv.Validator.Struct(i)
 	if err != nil {
 		return echo.ErrBadRequest.Wrap(err)
 	}
