@@ -26,10 +26,13 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"sort"
 
 	"github.com/deathlabs/finch/models"
 	oscalTypes_1_1_3 "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-3"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	"gopkg.in/yaml.v2"
 )
 
 // State is the state of the server. It holds the file path and data of the System Security Plan.
@@ -58,7 +61,6 @@ var stepper = []Step{
 	{Number: 1, Label: "Load System Security Plan", Template: "step-1.html"},
 	{Number: 2, Label: "Create OSCAL Components", Template: "step-2.html"},
 	{Number: 3, Label: "Map OSCAL Components to Security Rules", Template: "step-3.html"},
-	{Number: 4, Label: "Export Mappings", Template: "step-4.html"},
 }
 
 // viewData assembles the data every template needs.
@@ -70,7 +72,7 @@ func (state *State) viewData() map[string]any {
 		"SystemSecurityPlan":         state.SystemSecurityPlan,
 		"InitialBlock":               ComponentBlockData{Index: 0, AvailableControls: state.getAvailableControlIDs()},
 		"Components":                 state.Components,
-		"AvailableRules":             state.getAvailableRuleIDs(),
+		"AvailableRulesByTool":       state.getAvailableRulesByTool(),
 	}
 }
 
@@ -146,15 +148,27 @@ func (state *State) getAvailableControlIDs() []string {
 	return controlIDs
 }
 
-// getAvailableRuleIDs returns a list of all security rule IDs available for mapping.
-func (state *State) getAvailableRuleIDs() []string {
-	return []string{
-		"10021", // X-Content-Type-Options Header Missing
-		"10062", // PII Disclosure (RFC 1918 IP Address)
-		"40012", // Cross Site Scripting (Reflected)
-		"40003", // Directory Browsing
-		"90019", // Server Side Code Injection
-		"90022", // Application Error Disclosure
+func (state *State) getAvailableRulesByTool() map[string][]string {
+	return map[string][]string{
+		"ZAP": {
+			"10021",
+			"10062",
+			"40012",
+			"40003",
+			"90019",
+			"90022",
+		},
+		"Semgrep": {
+			"python.django.security.audit.xss.filter-with-is-safe.filter-with-is-safe",
+			"python.django.security.audit.xss.formathtml-fstring-parameter.formathtml-fstring-parameter",
+			"python.django.security.injection.raw-html-format.raw-html-format",
+			"python.django.security.injection.raw-html-template.raw-html-template",
+			"python.django.security.injection.raw-html-template-parameter.raw-html-template-parameter",
+			"python.django.security.injection.raw-html-template-variable.raw-html-template-variable",
+			"python.django.security.injection.raw-html-variable.raw-html-variable",
+			"python.django.security.injection.template-parameter.template-parameter",
+			"python.django.security.injection.template-variable.template-variable",
+		},
 	}
 }
 
@@ -194,11 +208,13 @@ func (state *State) postNext(context *echo.Context) error {
 	var (
 		component        models.ComponentDefinition
 		controlKey       string
+		controls         []string
 		descriptionKey   string
 		err              error
 		index            int
 		parsedComponents []models.ComponentDefinition
 		purposeKey       string
+		ok               bool
 		request          *http.Request
 		titleKey         string
 		typeKey          string
@@ -215,11 +231,12 @@ func (state *State) postNext(context *echo.Context) error {
 		index = 0
 		for {
 			titleKey = fmt.Sprintf("component_title_%d", index)
-			if _, ok := request.Form[titleKey]; !ok {
+			if _, ok = request.Form[titleKey]; !ok {
 				break
 			}
 
 			component = models.ComponentDefinition{
+				UUID:  uuid.NewString(),
 				Title: request.Form.Get(titleKey),
 			}
 
@@ -233,8 +250,9 @@ func (state *State) postNext(context *echo.Context) error {
 			component.Purpose = request.Form.Get(purposeKey)
 
 			controlKey = fmt.Sprintf("component_control_%d", index)
-			if controls, ok := request.Form[controlKey]; ok {
-				component.ImplementedControls = controls
+			if controls, ok = request.Form[controlKey]; ok {
+				sort.Strings(controls)
+				component.ControlsImplementedByThisComponent = controls
 			}
 
 			parsedComponents = append(parsedComponents, component)
@@ -246,13 +264,7 @@ func (state *State) postNext(context *echo.Context) error {
 
 	// If transitioning out of Step 3, parse and commit rule mappings to each component.
 	if state.CurrentStep == 3 {
-		var ruleKey string
-		for index = range state.Components {
-			ruleKey = fmt.Sprintf("component_rules_%d", index)
-			if rules, ok := request.Form[ruleKey]; ok {
-				state.Components[index].MappedRules = rules
-			}
-		}
+		state.applyRuleMappings(request)
 	}
 
 	// Move to the next step if not already at the end of the stepper.
@@ -264,7 +276,63 @@ func (state *State) postNext(context *echo.Context) error {
 	return context.Render(http.StatusOK, "stepper.html", state.viewData())
 }
 
+// applyRuleMappings parses submitted rule checkboxes and commits them to each component in state.
+func (state *State) applyRuleMappings(request *http.Request) {
+	var (
+		index     int
+		ok        bool
+		ruleKey   string
+		rules     []string
+		toolRules []models.ToolRules
+		tool      string
+		tools     []string
+	)
+
+	tools = make([]string, 0, len(state.getAvailableRulesByTool()))
+	for tool = range state.getAvailableRulesByTool() {
+		tools = append(tools, tool)
+	}
+	sort.Strings(tools)
+
+	for index = range state.Components {
+		toolRules = nil
+		for _, tool = range tools {
+			ruleKey = fmt.Sprintf("component_rules_%d_%s", index, tool)
+			if rules, ok = request.Form[ruleKey]; ok {
+				sort.Strings(rules)
+				toolRules = append(toolRules, models.ToolRules{
+					Tool:  tool,
+					Rules: rules,
+				})
+			}
+		}
+		state.Components[index].SecurityRulesMitigatedByThisComponent = toolRules
+	}
+}
+
 // postExport is the handler for the "/export" endpoint.
 func (state *State) postExport(context *echo.Context) error {
-	return context.Render(http.StatusOK, "stepper.html", state.viewData())
+	var (
+		document models.ExportDocument
+		err      error
+		output   []byte
+		request  *http.Request
+	)
+
+	request = context.Request()
+	if err = request.ParseForm(); err != nil {
+		return context.String(http.StatusBadRequest, "failed to parse form data")
+	}
+
+	state.applyRuleMappings(request)
+
+	document = models.ExportDocument{Components: state.Components}
+
+	output, err = yaml.Marshal(document)
+	if err != nil {
+		return context.String(http.StatusInternalServerError, "failed to generate yaml: "+err.Error())
+	}
+
+	context.Response().Header().Set("Content-Disposition", "attachment; filename=mappings.yaml")
+	return context.Blob(http.StatusOK, "application/x-yaml", output)
 }

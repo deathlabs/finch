@@ -5,8 +5,10 @@ go 1.26.2
 require (
 	github.com/defenseunicorns/go-oscal v0.7.0
 	github.com/go-playground/validator/v10 v10.30.2
+	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v5 v5.1.1
 	github.com/spf13/cobra v1.10.2
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

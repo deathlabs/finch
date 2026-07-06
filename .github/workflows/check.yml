@@ -1,0 +1,65 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.2'
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+
+  secrets:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v6
+      - name: Run Trufflehog
+        id: trufflehog
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: false
+
+  sast:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v6
+      - name: Run Semgrep
+        run: semgrep scan --config auto .
+
+  sca:
+    name: SBOM Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          output-file: sbom.json
+          artifact-name: sbom
+      - name: Run Grype
+        uses: anchore/scan-action@v7
+        with:
+          sbom: sbom.json
+          severity-cutoff: high

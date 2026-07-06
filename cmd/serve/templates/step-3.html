@@ -1,15 +1,27 @@
-<form hx-post="/next" hx-target="#main-content" hx-swap="innerHTML">
-  {{template "stepper-buttons.html" .}}
+<form method="post" action="/export">
+  <fieldset role="group">
+    <button type="button" class="secondary" hx-post="/back" hx-target="#main-content" hx-swap="innerHTML"{{if eq .CurrentStep 1}} disabled{{end}}>
+      Back
+    </button>
+    <button type="submit">
+      Export
+    </button>
+  </fieldset>
 
   {{range $index, $component := .Components}}
     <details {{if eq $index 0}}open{{end}}>
       <summary>{{$component.Title}}</summary>
 
-      {{range $.AvailableRules}}
-        <label>
-          <input type="checkbox" name="component_rules_{{$index}}" value="{{.}}">
-          <code>{{.}}</code>
-        </label>
+      {{range $tool, $rules := $.AvailableRulesByTool}}
+        <fieldset>
+          <legend>{{$tool}}</legend>
+          {{range $rules}}
+            <label>
+              <input type="checkbox" name="component_rules_{{$index}}_{{$tool}}" value="{{.}}">
+              <code>{{.}}</code>
+            </label>
+          {{end}}
+        </fieldset>
       {{else}}
         <p><small>No security rules available.</small></p>
       {{end}}
