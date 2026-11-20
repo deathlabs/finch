@@ -1,24 +1,3 @@
-/*
-Copyright © 2026 Victor Fernandez III <@cyberphor>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 package serve
 
 import (
@@ -27,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/deathlabs/finch/models"
 	oscalTypes_1_1_3 "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-3"
@@ -151,10 +131,14 @@ func (state *State) getAvailableControlIDs() []string {
 func (state *State) getAvailableRulesByTool() map[string][]string {
 	return map[string][]string{
 		"ZAP": {
+			"10020",
 			"10021",
+			"10038",
 			"10062",
+			"10202",
 			"40012",
 			"40003",
+			"40018",
 			"90019",
 			"90022",
 		},
@@ -310,6 +294,21 @@ func (state *State) applyRuleMappings(request *http.Request) {
 	}
 }
 
+// exportMetadata describes the System Security Plan the exported mappings were created from.
+func (state *State) exportMetadata() *models.ExportMetadata {
+	if state.SystemSecurityPlan == nil {
+		return nil
+	}
+
+	return &models.ExportMetadata{
+		SystemSecurityPlanUUID:         state.SystemSecurityPlan.UUID,
+		SystemSecurityPlanTitle:        state.SystemSecurityPlan.Metadata.Title,
+		SystemSecurityPlanVersion:      state.SystemSecurityPlan.Metadata.Version,
+		SystemSecurityPlanLastModified: fmt.Sprint(state.SystemSecurityPlan.Metadata.LastModified),
+		GeneratedAt:                    time.Now().UTC().Format(time.RFC3339),
+	}
+}
+
 // postExport is the handler for the "/export" endpoint.
 func (state *State) postExport(context *echo.Context) error {
 	var (
@@ -326,7 +325,10 @@ func (state *State) postExport(context *echo.Context) error {
 
 	state.applyRuleMappings(request)
 
-	document = models.ExportDocument{Components: state.Components}
+	document = models.ExportDocument{
+		Metadata:   state.exportMetadata(),
+		Components: state.Components,
+	}
 
 	output, err = yaml.Marshal(document)
 	if err != nil {

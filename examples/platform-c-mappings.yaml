@@ -1,0 +1,31 @@
+---
+metadata:
+  system_security_plan_uuid: 33333333-3333-4333-8333-333333333333
+  system_security_plan_title: Platform C System Security Plan
+  system_security_plan_version: "1.0"
+  generated_at: "2026-11-19T00:00:00Z"
+components:
+- uuid: 6f1c2e0c-0000-4000-8000-000000000001
+  title: Ingress Proxy
+  type: software
+  description: Applies security headers to tenant application responses
+  purpose: Adds anti-clickjacking and MIME-sniffing protections at ingress
+  controls_implemented_by_this_component:
+  - sc-7
+  - si-10
+  security_rules_mitigated_by_this_component:
+  - tool: ZAP
+    rules:
+    - "10020"
+    - "10021"
+- uuid: 6f1c2e0c-0000-4000-8000-000000000002
+  title: TLS Gateway
+  type: service
+  description: Terminates HTTPS connections for tenant applications
+  purpose: Applies HSTS to HTTPS responses
+  controls_implemented_by_this_component:
+  - sc-8
+  security_rules_mitigated_by_this_component:
+  - tool: ZAP
+    rules:
+    - "10035"

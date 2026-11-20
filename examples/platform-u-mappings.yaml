@@ -1,0 +1,98 @@
+---
+# Example inventory based on UDS Core 1.17; installed services vary by bundle.
+# SSP metadata, component UUIDs, and deployment-specific mappings require operator verification.
+metadata:
+  system_security_plan_uuid: 44444444-4444-4444-8444-444444444444
+  system_security_plan_title: Platform U Example System Security Plan
+  system_security_plan_version: "1.0"
+components:
+- uuid: 6f1c2e0d-0000-4000-8000-000000000001
+  title: Istio
+  type: software
+  purpose: Provides the service mesh, traffic management, and controlled ingress.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000002
+  title: UDS Operator
+  type: software
+  purpose: Reconciles UDS resources and configures application integrations.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000003
+  title: UDS Policy Engine (Pepr)
+  type: software
+  purpose: Enforces admission policies and manages policy exemptions.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000004
+  title: Keycloak
+  type: software
+  purpose: Provides centralized identity and single sign-on.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000005
+  title: Authservice
+  type: software
+  purpose: Provides OIDC authentication at the service mesh boundary when configured.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000006
+  title: Kubernetes Metrics Server
+  type: software
+  purpose: Provides resource metrics for Kubernetes workloads when enabled.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000007
+  title: Falco
+  type: software
+  purpose: Detects suspicious activity in running workloads.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000008
+  title: Falcosidekick
+  type: software
+  purpose: Routes Falco alerts to configured destinations.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000009
+  title: Vector
+  type: software
+  purpose: Collects and forwards logs from cluster workloads.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000010
+  title: Loki
+  type: software
+  purpose: Stores and supports searches of collected logs.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000011
+  title: Prometheus
+  type: software
+  purpose: Collects and queries metrics from monitored targets.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000012
+  title: Grafana
+  type: software
+  purpose: Displays dashboards for metrics and logs.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000013
+  title: Alertmanager
+  type: software
+  purpose: Routes alerts from the monitoring stack.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000014
+  title: Prometheus Blackbox Exporter
+  type: software
+  purpose: Probes configured endpoints for availability.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
+- uuid: 6f1c2e0d-0000-4000-8000-000000000015
+  title: Velero
+  type: software
+  purpose: Backs up and restores Kubernetes resources and persistent volumes.
+  controls_implemented_by_this_component: []
+  security_rules_mitigated_by_this_component: []
