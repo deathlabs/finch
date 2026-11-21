@@ -4,10 +4,21 @@ Deploy faster without having to write security exceptions for vulnerabilities mi
 
 ## How it works
 
-1. A platform operator runs `finch serve`, loads the platform's System Security Plan (OSCAL JSON), defines the platform's components, and maps each component to the scanner rules it mitigates. The result is exported as `mappings.yaml`.
-2. A CI pipeline runs `finch generate` against that file to produce scanner-native suppression files before the scanner runs.
+**Step 1.** A platform operator runs `finch serve`, loads the platform's System Security Plan (OSCAL JSON), defines the platform's components, and maps each component to the scanner rules it mitigates. The result is exported as `mappings.yaml`.
+
+**Step 2.** A CI pipeline runs `finch generate` against that file to produce scanner-native suppression files before the scanner runs.
+
+### `finch tui`
+
+Run `finch tui` to create mappings in a terminal. Enter an OSCAL SSP JSON path, or pass it with `--ssp`. Follow the prompts to add components, controls, and scanner rules. Enter a blank scanner name when you finish the rules for a component. The default output file is `mappings.yaml`. Press Escape to return to an earlier component field, or Ctrl+C to quit.
 
 ### `finch generate`
+
+![Demo of Grype showing a finding before and after Finch generates a suppression](docs/demo/generate.gif)
+
+The demo scans a [sample Log4j SBOM](docs/demo/log4j-sbom.json) with Grype. It filters the display to one finding, then shows that finding as suppressed after Finch generates the Grype configuration. The [mappings](docs/demo/mappings.yaml) are fictional and do not establish a real mitigation.
+
+To record the demo again, install Finch, Grype, and VHS with its dependencies. Update the Grype vulnerability database, then run `vhs docs/demo/generate.tape` from the repository root.
 
 ```bash
 finch generate --mappings mappings.yaml --tool zap --output-dir finch-out
@@ -16,7 +27,7 @@ finch generate --mappings mappings.yaml --tool zap --output-dir finch-out
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--mappings` | (required) | Mappings file exported by `finch serve` |
-| `--tool` | `zap` | Scanner to generate files for (supported: `zap`) |
+| `--tool` | `zap` | Scanner to generate files for (supported: `zap`, `grype`) |
 | `--output-dir` | `finch-out` | Directory to write generated files to |
 
 For ZAP, three files are written:
@@ -27,9 +38,11 @@ For ZAP, three files are written:
 | `zap-alert-filters.yaml` | An Automation Framework `alertFilter` job. Suppressed alerts stay in the report, marked "False Positive". |
 | `suppression-report.json` | For each suppressed rule: the platform components and controls that justify it, plus the SSP the mappings came from. Keep it in the body of evidence. |
 
-`finch generate` fails closed. If the mappings file has an unknown key, a rule ID that is not a ZAP rule ID (digits only), or a component that maps rules but implements no controls, nothing is written.
+For Grype, `finch generate` writes `grype-ignore.yaml` and `grype-suppression-report.json`. Pass the ignore file to Grype with `--config`. Each vulnerability rule applies to all packages.
 
-See the fictional mappings for [Platform A](examples/platform-a-mappings.yaml), [Platform B](examples/platform-b-mappings.yaml), and [Platform C](examples/platform-c-mappings.yaml). Platform A includes Semgrep mappings for illustration; `finch generate` currently supports ZAP only. These examples do not establish that a real platform mitigates a finding. A ZAP rule can report multiple alert types, and a mapping suppresses the entire rule. Verify each mapping against the platform and scan configuration before use.
+`finch generate` fails closed. If the mappings file has an unknown key, an invalid rule ID, or a component that maps rules but implements no controls, nothing is written. ZAP rule IDs contain digits only.
+
+See the fictional mappings for [Platform A](examples/platform-a-mappings.yaml), [Platform B](examples/platform-b-mappings.yaml), and [Platform C](examples/platform-c-mappings.yaml). Platform A includes Semgrep mappings for illustration; `finch generate` supports ZAP and Grype. These examples do not establish that a real platform mitigates a finding. A ZAP rule can report multiple alert types, and a mapping suppresses the entire rule. Verify each mapping against the platform and scan configuration before use.
 
 [Platform U](examples/platform-u-mappings.yaml) illustrates a UDS Core 1.17 service inventory. Its SSP metadata and component UUIDs are examples. Services vary by bundle and configuration. It contains no control or scanner rule mappings; add those only after verifying the deployed platform and its SSP. See the [UDS Core concepts documentation](https://docs.defenseunicorns.com/core/v1-17/concepts/overview/) for the capability layers.
 

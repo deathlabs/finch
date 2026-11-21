@@ -5,6 +5,7 @@ import (
 
 	"github.com/deathlabs/finch/cmd/generate"
 	"github.com/deathlabs/finch/cmd/serve"
+	"github.com/deathlabs/finch/cmd/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -34,4 +35,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&pluginsDirectory, "plugins-dir", "", "plugins", "Plugins directory")
 	rootCmd.AddCommand(generate.Cmd)
 	rootCmd.AddCommand(serve.Cmd)
+	rootCmd.AddCommand(tui.Cmd)
 }
