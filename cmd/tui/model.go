@@ -163,7 +163,7 @@ func (m *model) clickControl(row int) {
 	}
 	line = ansi.Strip(lines[row])
 	for index, control = range m.controls {
-		if line == "> [ ] "+control || line == "> [x] "+control || line == "  [ ] "+control || line == "  [x] "+control {
+		if strings.HasSuffix(strings.TrimRight(line, " "), "> [ ] "+control) || strings.HasSuffix(strings.TrimRight(line, " "), "> [x] "+control) || strings.HasSuffix(strings.TrimRight(line, " "), "  [ ] "+control) || strings.HasSuffix(strings.TrimRight(line, " "), "  [x] "+control) {
 			m.toggleControl(index)
 			return
 		}
@@ -628,11 +628,18 @@ func (m model) renderProgress() string {
 			labels = append(labels, detailStyle.Render("○ "+label))
 		}
 	}
-	row = strings.Join(labels, "  ")
-	if m.width > 0 && lipgloss.Width(row) > m.width {
+	row = strings.Join(labels, "\n")
+	if m.width > 0 && m.width < 55 {
 		row = renderLine(promptStyle, fmt.Sprintf("%d/5 %s", active+1, stages[active]), m.width)
 	}
 	return row
+}
+
+func (m model) renderBody(content string) string {
+	if m.width > 0 && m.width < 55 {
+		return m.renderProgress() + "\n\n" + content
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(29).Render(m.renderProgress()), content)
 }
 
 func (m model) View() string {
@@ -643,9 +650,10 @@ func (m model) View() string {
 		placeholder string
 		planTitle   string
 		status      string
+		fullWidth   int
 	)
 	if m.step == 0 && m.path != "" && m.plan == nil && m.message == "" {
-		return renderLine(titleStyle, "Finch", m.width) + "\n" + m.renderProgress() + "\n\n" + renderLine(detailStyle, "Loading SSP...", m.width) + "\n"
+		return renderLine(titleStyle, "Finch", m.width) + "\n\n" + m.renderBody(renderLine(detailStyle, "Loading SSP...", m.width)) + "\n"
 	}
 	switch m.step {
 	case 0:
@@ -672,16 +680,17 @@ func (m model) View() string {
 	case 9:
 		prompt = "Output File Path"
 	}
-	lines = append(lines, renderLine(titleStyle, "Finch", m.width), "")
+	fullWidth = m.width
 	planTitle = "None"
 	if m.plan != nil {
 		planTitle = m.plan.Metadata.Title
 	}
 	status = ansi.Hardwrap(detailStyle.Render("SSP: ")+inputStyle.Render(planTitle)+detailStyle.Render(" | Components Created: ")+inputStyle.Render(fmt.Sprint(len(m.components))), m.width, true)
-	lines = append(lines, m.renderProgress(), "")
 	if m.step == 11 {
-		lines = append(lines, renderLine(successStyle, m.message, m.width), "", status, "", renderHelp(m.width, [2]string{"Ctrl+C", "quit"}))
-		return strings.Join(lines, "\n") + "\n"
+		return renderLine(titleStyle, "Finch", fullWidth) + "\n\n" + m.renderBody(renderLine(successStyle, m.message, fullWidth)) + "\n\n" + status + "\n\n" + renderHelp(fullWidth, [2]string{"Ctrl+C", "quit"}) + "\n"
+	}
+	if m.width >= 55 {
+		m.width -= 29
 	}
 	inputLine = renderLine(inputStyle, "> "+m.input+"_", m.width)
 	if m.step == 2 || m.step == 6 {
@@ -818,7 +827,8 @@ func (m model) View() string {
 	if m.busy {
 		lines = append(lines, renderLine(detailStyle, "Working...", m.width))
 	}
-	lines = append(lines, "", status, "")
+	m.width = fullWidth
+	lines = []string{renderLine(titleStyle, "Finch", m.width), "", m.renderBody(strings.Join(lines, "\n")), "", status, ""}
 	if !m.busy {
 		if m.step == 0 {
 			lines = append(lines, renderHelp(m.width, [2]string{"Tab", "cycle JSON files"}, [2]string{"Enter", "continue"}, [2]string{"Ctrl+C", "quit"}))

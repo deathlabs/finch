@@ -5,7 +5,7 @@
 - Add `finch tui` to create component and scanner rule mappings in a terminal.
 - Select SSP controls from a scrollable list in `finch tui`.
 - Select ZAP rules from a list or enter additional rule IDs in `finch tui`.
-- Show workflow stages and the SSP and component count in `finch tui`.
+- Show workflow stages in a side panel and show the SSP and component count in `finch tui`.
 
 ### Changed
 - Use Kaiju’s amethyst and grayscale palette for `finch tui` and show keyboard help in gray.
