@@ -10,7 +10,11 @@ Deploy faster without having to write security exceptions for vulnerabilities mi
 
 ### `finch tui`
 
-Run `finch tui` to create mappings in a terminal. Enter an OSCAL SSP JSON path, or pass it with `--ssp`. Follow the prompts to add components, controls, and scanner rules. Enter a blank scanner name when you finish the rules for a component. The default output file is `mappings.yaml`. Press Escape to return to an earlier component field, or Ctrl+C to quit.
+![Demo of Finch creating component and rule mappings in a terminal](docs/demo/tui.gif)
+
+Run `finch tui` to create mappings in a terminal. Enter an OSCAL SSP JSON path, or pass it with `--ssp`. Follow the prompts to add components, controls, and scanner rules. Use Ctrl+D to finish without adding a security tool. The default output file is `mappings.yaml`. Press Escape to return to an earlier field, or Ctrl+C to quit.
+
+The demo uses a fictional [SSP](docs/demo/tui-ssp.json). It does not establish a real mitigation. To record it again, install Finch and VHS with its dependencies. Then run `vhs docs/demo/tui.tape` from the repository root.
 
 ### `finch generate`
 
