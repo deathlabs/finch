@@ -206,6 +206,17 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.step = 0
 			return m, nil
 		}
+		if m.plan != nil && result.path != m.path {
+			m.components = nil
+			m.component = models.ComponentDefinition{}
+			m.controlSelected = nil
+			m.controlIndex = 0
+			m.rules = nil
+			m.tool = ""
+			m.zapSelected = nil
+			m.zapIndex = 0
+			m.zapManual = false
+		}
 		m.plan = result.plan
 		m.path = result.path
 		m.controls = nil
@@ -252,6 +263,13 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	if key.Type == tea.KeyCtrlC {
 		return m, tea.Quit
 	}
+	if m.step == 11 && key.Type == tea.KeyCtrlR {
+		var reset model
+		reset = newModel("")
+		reset.width = m.width
+		reset.height = m.height
+		return reset, nil
+	}
 	if m.busy || m.step == 11 {
 		return m, nil
 	}
@@ -297,6 +315,12 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
+	}
+	if m.step == 8 && key.Type == tea.KeyCtrlT {
+		m.step = 6
+		m.input = ""
+		m.message = ""
+		return m, nil
 	}
 	if m.step == 6 && key.Type == tea.KeyCtrlD {
 		m.step = 8
@@ -345,6 +369,12 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		m.completionRequest++
 	}
 	if key.Type == tea.KeyEsc {
+		if m.step == 1 {
+			m.step = 0
+			m.input = m.path
+			m.message = ""
+			return m, nil
+		}
 		if m.step > 1 && m.step < 9 {
 			m.step--
 			m.input = m.previous()
@@ -516,7 +546,7 @@ func (m *model) submit() tea.Cmd {
 		m.zapSelected = nil
 		m.zapIndex = 0
 		m.zapManual = false
-		m.step = 6
+		m.step = 8
 		m.input = ""
 		return nil
 	case 8:
@@ -628,18 +658,11 @@ func (m model) renderProgress() string {
 			labels = append(labels, detailStyle.Render("○ "+label))
 		}
 	}
-	row = strings.Join(labels, "\n")
-	if m.width > 0 && m.width < 55 {
+	row = strings.Join(labels, "  ")
+	if m.width > 0 && lipgloss.Width(row) > m.width {
 		row = renderLine(promptStyle, fmt.Sprintf("%d/5 %s", active+1, stages[active]), m.width)
 	}
 	return row
-}
-
-func (m model) renderBody(content string) string {
-	if m.width > 0 && m.width < 55 {
-		return m.renderProgress() + "\n\n" + content
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(29).Render(m.renderProgress()), content)
 }
 
 func (m model) View() string {
@@ -650,10 +673,9 @@ func (m model) View() string {
 		placeholder string
 		planTitle   string
 		status      string
-		fullWidth   int
 	)
 	if m.step == 0 && m.path != "" && m.plan == nil && m.message == "" {
-		return renderLine(titleStyle, "Finch", m.width) + "\n\n" + m.renderBody(renderLine(detailStyle, "Loading SSP...", m.width)) + "\n"
+		return renderLine(titleStyle, "Finch", m.width) + "\n" + m.renderProgress() + "\n\n" + renderLine(detailStyle, "Loading SSP...", m.width) + "\n"
 	}
 	switch m.step {
 	case 0:
@@ -676,21 +698,17 @@ func (m model) View() string {
 			prompt = "ZAP Rules"
 		}
 	case 8:
-		prompt = "Add Another Component? (y/N)"
+		prompt = "Add another component? (y/N)"
 	case 9:
 		prompt = "Output File Path"
 	}
-	fullWidth = m.width
 	planTitle = "None"
 	if m.plan != nil {
 		planTitle = m.plan.Metadata.Title
 	}
 	status = ansi.Hardwrap(detailStyle.Render("SSP: ")+inputStyle.Render(planTitle)+detailStyle.Render(" | Components Created: ")+inputStyle.Render(fmt.Sprint(len(m.components))), m.width, true)
 	if m.step == 11 {
-		return renderLine(titleStyle, "Finch", fullWidth) + "\n\n" + m.renderBody(renderLine(successStyle, m.message, fullWidth)) + "\n\n" + status + "\n\n" + renderHelp(fullWidth, [2]string{"Ctrl+C", "quit"}) + "\n"
-	}
-	if m.width >= 55 {
-		m.width -= 29
+		return renderLine(titleStyle, "Finch", m.width) + "\n\n" + m.renderProgress() + "\n\n" + renderLine(successStyle, m.message, m.width) + "\n\n" + status + "\n\n" + renderHelp(m.width, [2]string{"Ctrl+R", "start over"}, [2]string{"Ctrl+C", "quit"}) + "\n"
 	}
 	inputLine = renderLine(inputStyle, "> "+m.input+"_", m.width)
 	if m.step == 2 || m.step == 6 {
@@ -827,19 +845,21 @@ func (m model) View() string {
 	if m.busy {
 		lines = append(lines, renderLine(detailStyle, "Working...", m.width))
 	}
-	m.width = fullWidth
-	lines = []string{renderLine(titleStyle, "Finch", m.width), "", m.renderBody(strings.Join(lines, "\n")), "", status, ""}
+	lines = append([]string{renderLine(titleStyle, "Finch", m.width), "", m.renderProgress(), ""}, lines...)
+	lines = append(lines, "", status, "")
 	if !m.busy {
 		if m.step == 0 {
-			lines = append(lines, renderHelp(m.width, [2]string{"Tab", "cycle JSON files"}, [2]string{"Enter", "continue"}, [2]string{"Ctrl+C", "quit"}))
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"Tab", "cycle JSON files"}, [2]string{"Ctrl+C", "quit"}))
 		} else if m.step == 5 {
-			lines = append(lines, renderHelp(m.width, [2]string{"↑/↓", "move"}, [2]string{"Space / click", "select"}, [2]string{"Enter", "continue"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"↑/↓", "move"}, [2]string{"Space / click", "select"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
 		} else if m.step == 7 && m.tool == "ZAP" {
-			lines = append(lines, renderHelp(m.width, [2]string{"↑/↓", "move"}, [2]string{"Space", "select"}, [2]string{"Tab", "additional IDs"}, [2]string{"Enter", "continue"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"↑/↓", "move"}, [2]string{"Space", "select"}, [2]string{"Tab", "additional IDs"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
+		} else if m.step == 8 {
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"y / n", "add another component"}, [2]string{"Ctrl+T", "add another tool"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
 		} else if m.step == 6 {
-			lines = append(lines, renderHelp(m.width, [2]string{"↑/↓", "select"}, [2]string{"Enter", "continue"}, [2]string{"Ctrl+D", "finish rules"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"↑/↓", "select"}, [2]string{"Ctrl+D", "finish rules"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
 		} else if m.step == 2 {
-			lines = append(lines, renderHelp(m.width, [2]string{"↑/↓", "select"}, [2]string{"Enter", "continue"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
+			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"↑/↓", "select"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
 		} else {
 			lines = append(lines, renderHelp(m.width, [2]string{"Enter", "continue"}, [2]string{"Esc", "back"}, [2]string{"Ctrl+C", "quit"}))
 		}

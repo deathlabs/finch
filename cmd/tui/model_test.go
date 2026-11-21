@@ -219,7 +219,7 @@ func TestZAPRuleSelection(t *testing.T) {
 	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyTab})
 	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("10020, 12345")})
 	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyEnter})
-	if current.step != 6 || len(current.rules) != 1 || strings.Join(current.rules[0].Rules, ",") != "10020,10021,12345" {
+	if current.step != 8 || len(current.rules) != 1 || strings.Join(current.rules[0].Rules, ",") != "10020,10021,12345" {
 		t.Fatalf("unexpected rules: %+v", current.rules)
 	}
 }
@@ -362,5 +362,55 @@ func TestExportConfirmationIgnoresEnter(t *testing.T) {
 	_, command = updateModel(current, tea.KeyMsg{Type: tea.KeyCtrlC})
 	if command == nil {
 		t.Fatal("Ctrl+C did not quit")
+	}
+}
+
+func TestAddAnotherComponentAfterRules(t *testing.T) {
+	var current model
+	current = newModel("")
+	current.step = 7
+	current.tool = "ZAP"
+	current.zapSelected = map[string]bool{"10020": true}
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyEnter})
+	if current.step != 8 || !strings.Contains(current.View(), "Add another component?") {
+		t.Fatal("component prompt not shown after rules")
+	}
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyCtrlT})
+	if current.step != 6 || len(current.rules) != 1 {
+		t.Fatal("could not add another tool")
+	}
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyCtrlD})
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyEnter})
+	if current.step != 1 || len(current.components) != 1 {
+		t.Fatal("could not start another component")
+	}
+}
+
+func TestStartOverAfterExport(t *testing.T) {
+	var current model
+	current = newModel("old.json")
+	current.step = 11
+	current.message = "Saved mappings.yaml"
+	current.components = []models.ComponentDefinition{{Title: "Old component"}}
+	current.width = 100
+	current.height = 30
+	if !strings.Contains(current.View(), "ctrl+r: start over") {
+		t.Fatal("restart shortcut missing")
+	}
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyCtrlR})
+	if current.step != 0 || current.path != "" || current.plan != nil || len(current.components) != 0 || current.message != "" || current.width != 100 || current.height != 30 {
+		t.Fatalf("workflow not reset: %+v", current)
+	}
+}
+
+func TestBackFromComponentTitle(t *testing.T) {
+	var current model
+	current = newModel("")
+	current.step = 1
+	current.path = "example.json"
+	current, _ = updateModel(current, tea.KeyMsg{Type: tea.KeyEsc})
+	if current.step != 0 || current.input != "example.json" {
+		t.Fatalf("did not return to SSP path: %+v", current)
 	}
 }
