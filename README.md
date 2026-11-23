@@ -2,7 +2,9 @@
 
 [![CI Pipeline](https://github.com/deathlabs/finch/actions/workflows/check.yml/badge.svg)](https://github.com/deathlabs/finch/actions/workflows/check.yml)
 
-Shape what your scanners see. Finch gives scanners context about your hosting platform's security controls. It helps platform teams document mitigations and reduce the time needed for approval.
+Shape what your scanners can see. Finch gives scanners context about your hosting platform's security controls. It helps platform teams document mitigations and reduce the time needed for approval.
+
+`finch` generates [Scanner](GLOSSARY.md) [Suppressions](GLOSSARY.md) for a [Tenant's](GLOSSARY.md) app from a [Platform Team's](GLOSSARY.md) [Mappings File](GLOSSARY.md).
 
 ## How It Works
 

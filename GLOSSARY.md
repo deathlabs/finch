@@ -16,6 +16,9 @@ A result reported by a Scanner when it detects a violation of a rule. A Finding 
 **Hosting Platform**
 The compute, storage, and networking resources required to host one or more apps. A Hosting Platform is an Information System. Each Hosting Platform has one System Security Plan.
 
+**Mappings File**
+A file that records mappings between Scanner rules, Components, and implemented Controls. It includes the Platform Team's rationale and an expiry date for each mapping. Finch uses the file to generate Suppressions. The Platform Team publishes a tagged version of the file for each Environment because the Components and Controls that mitigate Risk can differ between Environments.
+
 **Mitigation**
 The result when an implemented Control reduces the likelihood or impact of harm from a Threat or Vulnerability.
 
