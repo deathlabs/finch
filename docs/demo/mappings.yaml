@@ -1,0 +1,14 @@
+# Fictional mappings for the terminal demo, not evidence of mitigation.
+components:
+  - title: Example platform gateway
+    controls_implemented_by_this_component:
+      - sc-7
+    security_rules_mitigated_by_this_component:
+      - tool: ZAP
+        rules:
+          - "40012"
+          - "40018"
+      - tool: Grype
+        rules:
+          - CVE-2021-44228
+          - GHSA-jfh8-c2jp-5v3q

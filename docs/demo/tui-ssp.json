@@ -1,0 +1,15 @@
+{
+  "system-security-plan": {
+    "uuid": "8bc10f98-9049-4873-91c3-b842eecf67d8",
+    "metadata": {
+      "title": "Example Platform SSP",
+      "version": "1.0"
+    },
+    "control-implementation": {
+      "implemented-requirements": [
+        {"control-id": "sc-7"},
+        {"control-id": "si-10"}
+      ]
+    }
+  }
+}

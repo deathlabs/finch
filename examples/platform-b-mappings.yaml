@@ -1,0 +1,33 @@
+---
+metadata:
+  system_security_plan_uuid: 22222222-2222-4222-8222-222222222222
+  system_security_plan_title: Platform B System Security Plan
+  system_security_plan_version: "1.0"
+  generated_at: "2026-11-19T00:00:00Z"
+components:
+- uuid: 6f1c2e0b-0000-4000-8000-000000000001
+  title: Edge Gateway
+  type: service
+  description: Terminates HTTPS and applies response headers
+  purpose: Adds HSTS and prevents browsers from MIME-sniffing responses
+  controls_implemented_by_this_component:
+  - sc-8
+  - si-10
+  security_rules_mitigated_by_this_component:
+  - tool: ZAP
+    rules:
+    - "10021"
+    - "10035"
+- uuid: 6f1c2e0b-0000-4000-8000-000000000002
+  title: Security Header Policy
+  type: software
+  description: Applies browser security headers at the gateway
+  purpose: Restricts page framing and content sources for tenant applications
+  controls_implemented_by_this_component:
+  - sc-7
+  - si-10
+  security_rules_mitigated_by_this_component:
+  - tool: ZAP
+    rules:
+    - "10020"
+    - "10038"

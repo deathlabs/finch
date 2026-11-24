@@ -31,8 +31,10 @@ go.work.sum
 # .idea/
 # .vscode/
 
-finch
 eMASS_OSCAL_Profile.json 
 eMASS_OSCAL_SSP.json 
 eMASS_Values.json
-mappings.yaml
+*sbom.json
+*scan.json
+finch-out/
+ssp.json
