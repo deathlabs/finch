@@ -1,6 +1,6 @@
 # Plan
 
-The purpose of this document is to record the decisions and open items for a new implementation of `finch`. Use it with the [glossary](GLOSSARY.md) to guide implementation. Do not start implementation until the code owner approves both documents. The decisions in this plan are settled; implement them as written and flag conflicts rather than reopening them.
+This document records decisions and open items for a new implementation of `finch`. Use it with the [glossary](GLOSSARY.md) to guide implementation. Do not start implementation until the code owner approves both documents. Flag conflicts in settled decisions.
 
 **Approval Status**
 
@@ -9,73 +9,113 @@ The purpose of this document is to record the decisions and open items for a new
 
 ## Background
 
-A [Hosting Platform](GLOSSARY.md) has an Authority to Operate (ATO), [System Security Plan](GLOSSARY.md) ([SSP](GLOSSARY.md)), and version-controlled repository for security documentation. An app seeking deployment to multiple [Hosting Platforms](GLOSSARY.md) must obtain approval from each one and run a separate scan for each platform. This does not affect the design of `finch`.
+A [hosting platform](GLOSSARY.md) has an Authority to Operate (ATO) and a [system security plan](GLOSSARY.md) (SSP). An app seeking deployment to multiple [hosting platforms](GLOSSARY.md) must obtain approval from each one and run a separate scan for each platform.
 
-[Security Teams](GLOSSARY.md) can use `finch` to create and maintain a [Mappings File](GLOSSARY.md) and generate [Suppressions](GLOSSARY.md). A [Security Team](GLOSSARY.md) can reuse the same [Mappings File](GLOSSARY.md) for [Tenants](GLOSSARY.md) targeting the same [Hosting Platform](GLOSSARY.md) and across their app releases, reducing repeated work.
+The [security team](GLOSSARY.md) uses `finch` to maintain [mappings files](GLOSSARY.md) and generate [suppressions](GLOSSARY.md). A [tenant](GLOSSARY.md) or [security team](GLOSSARY.md) can propose a mapping by pull request or merge request. The [security team](GLOSSARY.md) reviews the proposal and decides whether to accept it. The [platform team](GLOSSARY.md) implements the platform and helps apps integrate with it.
 
-A [Security Team](GLOSSARY.md) can publish a separate [Mappings File](GLOSSARY.md) release for each [Environment](GLOSSARY.md). This practice does not have an impact on `finch`'s design.
+One central repository holds the [mappings files](GLOSSARY.md), with a folder for each platform. A [mappings file version](GLOSSARY.md) applies to one [environment](GLOSSARY.md) of one [hosting platform](GLOSSARY.md). A version uses a prefixed Git tag such as `platform-a/prod/v1.2.0`.
 
-The new implementation of `finch` will still be written in Go and will first support the [Scanner](GLOSSARY.md) known as ZAP. The new implementation does not need to be compatible with the existing code or mappings.
+The new implementation uses Go and first supports the [scanner](GLOSSARY.md) ZAP. It does not need to be compatible with the existing code or mappings.
+
+## Workflow
+
+The diagram shows the intended flow. The source of rule IDs and the way a pipeline selects a newly published version remain open.
+
+```mermaid
+flowchart TD
+    A["Security team or tenant proposes a mapping"] --> B["Pull or merge request to central mappings repository"]
+    B --> C["CI validates mappings against platform SSP"]
+    C --> D["Security team reviews proposal"]
+    D --> E{"Accepted?"}
+    E -->|No| A
+    E -->|Yes| F["Merge changes"]
+    F --> G["Publish tagged mappings file version"]
+    G --> H["App pipeline selects platform and environment version"]
+    H --> I["Pre-build job runs finch with mappings version and rule IDs"]
+    I --> J["Finch generates suppression file"]
+    J --> K["Scanner runs with suppression file"]
+```
 
 ## Data Models
 
-Target OSCAL 1.2.3, the latest release with a Go implementation ([go-oscal](https://github.com/defenseunicorns/go-oscal)). Stay close to the OSCAL specification. Do not invent structure that breaks validation.
+Target OSCAL 1.2.3 with [go-oscal](https://github.com/defenseunicorns/go-oscal). Stay close to the OSCAL specification. Do not invent structure that breaks validation.
 
-The [mappings file](GLOSSARY.md) is an OSCAL [component](GLOSSARY.md) definition. The placement below is the working choice. Before relying on it, confirm it against the OSCAL version in use and run the official validator over a sample file. Custom namespaced props are the spec's sanctioned extension point.
+The [mappings file](GLOSSARY.md) is an OSCAL component definition. The placement below is the working choice. Confirm it against the OSCAL version in use and run the official validator over a sample file before relying on it. Custom namespaced props are the specification's extension point.
 
 | Field | Candidate location | Rule |
 | --- | --- | --- |
-| [Component](GLOSSARY.md) | [Component](GLOSSARY.md) in the [component](GLOSSARY.md) definition | Must already exist in the [SSP](GLOSSARY.md) |
-| [Control](GLOSSARY.md) | `control-id` on an implemented requirement | Must exist in the [SSP](GLOSSARY.md) and be marked implemented, not planned or partial |
-| [Scanner](GLOSSARY.md) rule | Custom namespaced prop on the implemented requirement | Must exist in the [scanner's](GLOSSARY.md) rule set |
-| Stated reason | `remarks` | The engineer's own words, stored verbatim, never rewritten by `finch` or an agent |
+| [component](GLOSSARY.md) | [component](GLOSSARY.md) in the component definition | Must already exist in the [SSP](GLOSSARY.md) |
+| [control](GLOSSARY.md) | `control-id` on an implemented requirement | Must exist in the [SSP](GLOSSARY.md) and be marked implemented, not planned or partial |
+| [scanner](GLOSSARY.md) rule | Custom namespaced prop on the implemented requirement | Must exist in the [scanner's](GLOSSARY.md) rule set |
+| Reason | `remarks` | The submitter's own words, stored verbatim, never rewritten by `finch` or an agent |
 | [SSP](GLOSSARY.md) evidence | A link to the [control](GLOSSARY.md) in the [SSP](GLOSSARY.md) | A reference, not copied text |
 | [SSP](GLOSSARY.md) version | Reference to the [SSP](GLOSSARY.md) version used to assess the mappings | Must match the [SSP](GLOSSARY.md) provided for validation |
 | Expiry | Custom namespaced prop holding `YYYY-MM-DD` | UTC, inclusive, never later than the ATO expiration date |
-| UUIDs | Generated by `finch` | Derived deterministically from rule, [component](GLOSSARY.md), and [control](GLOSSARY.md), so regenerating the same proposal does not change the file |
+| UUIDs | Generated by `finch` | Derived deterministically from rule, [component](GLOSSARY.md), and [control](GLOSSARY.md), so the same inputs do not change the file |
 
-The [Platform Team](GLOSSARY.md) must confirm that the [Component](GLOSSARY.md) supports the [Control](GLOSSARY.md) and that the [Control](GLOSSARY.md) mitigates the [Risk](GLOSSARY.md) associated with the [Scanner](GLOSSARY.md) rule across its scope in the target [Context](GLOSSARY.md). `finch` does not assess these relationships.
-
-Generated [suppressions](GLOSSARY.md) carry a comment naming the platform, the release, the stated reason, and the expiry, so anyone reading the [scanner](GLOSSARY.md) configuration can see why each rule is suppressed. The pull request description carries anything else a reviewer needs that the mapping does not, which implies a pull request template in each platform's version-controlled repository.
+The [security team](GLOSSARY.md) must confirm that the [component](GLOSSARY.md) supports the [control](GLOSSARY.md) and that the [control](GLOSSARY.md) mitigates the [risk](GLOSSARY.md) associated with the rule across its scope in the target [context](GLOSSARY.md). `finch` does not assess these relationships.
 
 ## Architecture
 
-Build one binary with shared core functions and thin surfaces. There is no server application or GUI; the MCP server runs locally from the binary. No surface may contain rules the others lack, and the TUI and MCP tool enforce identical validation. Each [Hosting Platform](GLOSSARY.md) uses its version-controlled documentation repository as the registry for its mappings. Command and tool names below are suggestions.
+Build one binary with shared core functions and thin surfaces. The local MCP server runs from the same binary. There is no separate server application or GUI. All surfaces use the same validation rules.
 
-- Core functions: read an [SSP](GLOSSARY.md), read a mappings release, list [components](GLOSSARY.md), search [controls](GLOSSARY.md), build a mapping, export mappings, validate a mapping file, and generate [suppressions](GLOSSARY.md).
-- CLI: subcommands for `validate`, `propose`, and `generate`. An app's continuous integration (CI) pipeline runs `generate` against a platform release. [Hosting Platform](GLOSSARY.md) version-controlled repositories run `validate` in their own CI.
-- MCP server: a local server started from the same binary. Read tools cover [SSP](GLOSSARY.md) [components](GLOSSARY.md), [control](GLOSSARY.md) search, and the current mappings release. A `propose` tool takes a rule, a [component](GLOSSARY.md), a [control](GLOSSARY.md), the [Platform Team](GLOSSARY.md) member's stated reason, and a requested expiry, and returns the complete updated [mappings file](GLOSSARY.md). No MCP tool writes to a version-controlled repository or commits.
-- TUI: a form over the same `propose` function, for people without LLM access.
+The `--mode` flag selects `cli` (default), `tui`, or `mcp`. CLI commands take parameters directly. The TUI form and MCP tools supply the same parameters through their respective surfaces.
+
+* Core functions read an [SSP](GLOSSARY.md) and [mappings file](GLOSSARY.md), build mappings, validate a file, and generate [suppressions](GLOSSARY.md).
+* CLI and TUI mapping operations write the updated file to disk.
+* MCP mapping operations return the complete updated file. They do not return a diff, write to the repository, or commit. The same inputs produce the same file.
+* The central repository's CI validates the relevant [mappings file](GLOSSARY.md) against its platform's current [SSP](GLOSSARY.md).
+* An app pipeline runs `create suppression` in a pre-build job before the [scanner](GLOSSARY.md).
+
+The following CLI names and parameters describe the intended interface. Parameter names remain open.
+
+```text
+finch create component --ssp ssp.json --component <name> --mappings mappings.json
+finch map control --ssp ssp.json --mappings mappings.json --component <name> --control <id>
+finch map rule --ssp ssp.json --mappings mappings.json --component <name> --control <id> --rule zap:<id> --reason "<text>" --expiry YYYY-MM-DD
+finch validate --ssp ssp.json --mappings mappings.json
+finch create suppression --mappings <repo-path> --mappings-file-version <platform>/<environment>/<version> --scanner zap --rule <id> [--rule <id> ...]
+```
+
+The repeated `--rule` syntax illustrates multiple IDs; the final syntax is open. There is no separate export command.
 
 ## Features
 
-### Propose
+### Create component and map
 
-Authoring is agent assisted: a [Platform Team](GLOSSARY.md) member tells their agent why a rule should be suppressed. The agent calls the MCP propose tool, which reads the [SSP](GLOSSARY.md) and current mappings release and uses export to return the complete updated [mappings file](GLOSSARY.md) for the member to put in a pull request. Two-person integrity is already enforced on changes, so no extra release-authority [control](GLOSSARY.md) is needed.
+`create component` reads the [SSP](GLOSSARY.md) and adds a [component](GLOSSARY.md) to the [mappings file](GLOSSARY.md). Its exact scaffolding is open. `map control` associates an implemented [control](GLOSSARY.md) with a [component](GLOSSARY.md). `map rule` associates a [scanner](GLOSSARY.md) rule, reason, and expiry with that [control](GLOSSARY.md) and [component](GLOSSARY.md).
 
-Inputs are the [SSP](GLOSSARY.md), the current mappings release (a tag), a [scanner](GLOSSARY.md) rule, a [component](GLOSSARY.md), a [control](GLOSSARY.md), the [Platform Team](GLOSSARY.md) member's stated reason, and a requested expiry.
+For `map rule`:
 
-- Fail with a message naming the check if the [component](GLOSSARY.md) is missing from the [SSP](GLOSSARY.md), the [control](GLOSSARY.md) is missing or not marked implemented, the rule is not in the [scanner's](GLOSSARY.md) rule set, the stated reason is empty, or the expiry is unparseable or already past.
-- If the requested expiry is later than the platform's ATO expiration date, cap it at that date and say so in the response.
-- On success, return the complete updated [mappings file](GLOSSARY.md) for the [Platform Team](GLOSSARY.md) member's pull request. Do not return a diff and do not commit anything.
-- The same inputs always produce the same file.
+* Fail with a message naming the check if the [component](GLOSSARY.md) is missing from the [SSP](GLOSSARY.md), the [control](GLOSSARY.md) is missing or not marked implemented, the rule is not in the [scanner's](GLOSSARY.md) rule set, the reason is empty, or the expiry is unparseable or already past.
+* If the requested expiry is later than the ATO expiration date, cap it at that date and say so in the response.
+* Preserve the reason verbatim. The same inputs produce the same file.
 
 ### Validate
 
-Run the same checks over a whole [mappings file](GLOSSARY.md). It rejects a file with missing required fields or references that do not resolve against the [SSP](GLOSSARY.md). Report expired mappings as warnings without failing validation so the [Platform Team](GLOSSARY.md) can find and remove or renew them. [Hosting Platform](GLOSSARY.md) version-controlled repositories run it in their own CI.
+Run the checks over the whole [mappings file](GLOSSARY.md) against the current [SSP](GLOSSARY.md). Reject missing required fields and references that do not resolve, including a removed [component](GLOSSARY.md) or a [control](GLOSSARY.md) that is no longer implemented. Warn about expired mappings without failing validation.
 
-Fail validation if the [SSP](GLOSSARY.md) version provided differs from the version recorded in the [Mappings File](GLOSSARY.md). Report both versions so the [Platform Team](GLOSSARY.md) can review the mappings against the provided [SSP](GLOSSARY.md).
+Fail if the provided [SSP](GLOSSARY.md) version differs from the version recorded in the [mappings file](GLOSSARY.md). Report both versions so the [security team](GLOSSARY.md) can review the mappings. `finch` cannot determine whether changes to the [SSP](GLOSSARY.md) affect the validity of a mapping.
 
-The [SSP](GLOSSARY.md) can change after the [Platform Team](GLOSSARY.md) creates a mapping. For example, a [Component](GLOSSARY.md) might be removed or a [Control](GLOSSARY.md) might be implemented differently. The mapping might then no longer justify suppressing the [Scanner](GLOSSARY.md) rule. A version mismatch tells the [Platform Team](GLOSSARY.md) to review the mappings before it publishes the [Mappings File](GLOSSARY.md). `finch` cannot determine whether the changes affect a mapping.
+### Create suppression
 
-### Generate
+An app's CI pipeline runs this step before the [scanner](GLOSSARY.md), using a tagged [mappings file version](GLOSSARY.md) for its target platform and [environment](GLOSSARY.md). It supplies one or more rule IDs and the [scanner](GLOSSARY.md). `finch` reads the selected [mappings file](GLOSSARY.md), not the [SSP](GLOSSARY.md), and generates the appropriate [suppression](GLOSSARY.md) file for the supplied rules.
 
-Run by an app's CI pipeline once per targeted platform, against a pinned release (tag) of that platform's mappings, never a branch. Each release is for one [Environment](GLOSSARY.md). The pipeline records which release it used. This is a deterministic CLI step.
+* Use only the selected platform's mappings. Do not combine platforms.
+* Emit a [suppression](GLOSSARY.md) only for a supplied rule with an explicit, valid mapping.
+* Compare each mapping's expiry to the current UTC date. A mapping is valid through its expiry date. Omit expired mappings without failing or warning.
+* Include a comment naming the platform, [mappings file version](GLOSSARY.md), reason, and expiry for each valid mapping, subject to the selected output format.
+* Use deterministic output and no LLM.
 
-Only mappings for the targeted platform can justify a [suppression](GLOSSARY.md); a rule is never suppressed because every platform covers it.
+## Open Items
 
-- Use only that platform's mappings. Never combine mappings across platforms.
-- Compare each mapping's expiry to the current UTC date. A mapping is valid through its expiry date. If it has passed, emit no [suppression](GLOSSARY.md) for it. Do not fail and do not warn.
-- For each valid mapping, emit a Zap [suppression](GLOSSARY.md) with a comment naming the platform, the release, the stated reason, and the expiry.
-- Never suppress a rule that no mapping explicitly names.
-- Involve no LLM.
+* How does the pre-build job obtain the rule IDs before the scan?
+* How does a pipeline select a newly published [mappings file version](GLOSSARY.md), and how does `finch` locate its file from the tag?
+* What ZAP [suppression](GLOSSARY.md) format works with the quick scan wrapper, and how does the pipeline consume it?
+* When several valid mappings name one rule, should output contain one [suppression](GLOSSARY.md) with multiple reasons or one per mapping?
+* What should the exit code be when no supplied rule has a valid mapping?
+* Should `finch` produce a separate audit record of the version and reasons used, or are comments in the output sufficient?
+* What should `create component` scaffold from the [SSP](GLOSSARY.md)?
+* Where do the ATO expiration date and ZAP rule set come from? Should validation reject expiries past the ATO expiration date?
+* Do inherited [controls](GLOSSARY.md) count as implemented?
+* What happens to Semgrep rules in the legacy mappings, given that ZAP is first in scope?
