@@ -1,89 +1,138 @@
 # `finch`
-
-[![CI Pipeline](https://github.com/deathlabs/finch/actions/workflows/check.yml/badge.svg)](https://github.com/deathlabs/finch/actions/workflows/check.yml)
-
-Shape what your [scanners](GLOSSARY.md) can see. Finch gives [scanners](GLOSSARY.md) [context](GLOSSARY.md) about your [hosting platform's](GLOSSARY.md) security [controls](GLOSSARY.md). It helps [platform teams](GLOSSARY.md) document [mitigations](GLOSSARY.md) and reduce the time needed for approval.
-
-`finch` generates [scanner](GLOSSARY.md) [suppressions](GLOSSARY.md) for a [tenant's](GLOSSARY.md) app from a [platform team's](GLOSSARY.md) [mappings file](GLOSSARY.md).
-
-## How It Works
-
-1. A platform operator runs `finch serve` or `finch tui` and loads the platform's [system security plan](GLOSSARY.md) (SSP) in OSCAL JSON format.
-2. The operator defines platform [components](GLOSSARY.md) and maps them to the [controls](GLOSSARY.md) they implement and the [scanner](GLOSSARY.md) rules they mitigate. Finch saves these mappings in `mappings.yaml`.
-3. A continuous integration (CI) pipeline runs `finch generate` before the [scanner](GLOSSARY.md). Finch uses the mappings to create [suppression](GLOSSARY.md) files for the [scanner](GLOSSARY.md) and a report explaining the [suppressions](GLOSSARY.md).
-
-### `finch tui`
-
-![Demo of Finch creating component and rule mappings in a terminal](docs/demo/tui.gif)
-
-Run `finch tui` to create mappings in a terminal. Enter the path to an OSCAL SSP JSON file, or pass it with `--ssp`. Follow the prompts to add [components](GLOSSARY.md), [controls](GLOSSARY.md), and [scanner](GLOSSARY.md) rules. Press Ctrl+D to finish without adding a security tool. Finch writes to `mappings.yaml` by default. Press Escape to return to an earlier field or Ctrl+C to quit.
-
-The demo uses a fictional [SSP](docs/demo/tui-ssp.json). It does not demonstrate a real [mitigation](GLOSSARY.md). To record the demo again, install Finch and VHS with its dependencies. Then run `vhs docs/demo/tui.tape` from the repository root.
-
-### `finch generate`
-
-![Demo of Grype showing a finding before and after Finch generates a suppression](docs/demo/generate.gif)
-
-The demo scans a [sample Log4j software bill of materials (SBOM)](docs/demo/log4j-sbom.json) with Grype. It shows one [finding](GLOSSARY.md) before and after Finch generates the Grype configuration. The [mappings](docs/demo/mappings.yaml) are fictional and do not demonstrate a real [mitigation](GLOSSARY.md).
-
-To record the demo again, install Finch, Grype, and VHS with its dependencies. Update the Grype [vulnerability](GLOSSARY.md) database, then run `vhs docs/demo/generate.tape` from the repository root.
-
+ 
+[![CI Pipeline](https://github.com/deathlabs/finch/actions/workflows/check.yml/badge.svg)](https://github.com/deathlabs/finch/actions/workflows/check.yml)  
+ 
+Shape what your [scanners](GLOSSARY.md) can see. 
+ 
+## Overview
+Finch gives [scanners](GLOSSARY.md) the [context](GLOSSARY.md) they need about your [hosting platform's](GLOSSARY.md) security [controls](GLOSSARY.md) to identify and ignore false positives. 
+ 
+## User Flows
+ 
+### Creating a Mappings File
+ 
+This user flow is focused on the [security team](GLOSSARY.md#security-team) user persona and assumes they have a [System Security Plan (SSP)](GLOSSARY.md#system-security-plan) for their [hosting platform](GLOSSARY.md#hosting-platform).
+ 
+**Step 1.** The [security team](GLOSSARY.md#security-team) identifies the [environment](GLOSSARY.md#environment) that the [mappings file](GLOSSARY.md#mappings-file) will cover.
+ 
+**Step 2.** The [security team](GLOSSARY.md#security-team) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify the [components](GLOSSARY.md#component) and implemented [controls](GLOSSARY.md#control) that apply to that [environment](GLOSSARY.md#environment).
+ 
+**Step 3.** The [security team](GLOSSARY.md#security-team) creates a [mappings file](GLOSSARY.md#mappings-file) using one of `finch`'s two modes: the Terminal User Interface (TUI) or the Model Context Protocol (MCP) server.
+ 
+**How to Invoke TUI Mode**
 ```bash
-finch generate --mappings mappings.yaml --tool zap --output-dir finch-out
+finch --mode tui
 ```
 
-| Flag | Default | Description |
-| --- | --- | --- |
-| `--mappings`   | (required)  | Path to the [mappings file](GLOSSARY.md) created by Finch |
-| `--tool`       | `zap`       | [Scanner](GLOSSARY.md) to generate files for: `zap` or `grype` |
-| `--output-dir` | `finch-out` | Directory for the generated files |
-
-For ZAP, three files are written:
-
-| File | Purpose |
-| --- | --- |
-| `zap-rules.conf`          | Pass this file to ZAP's scan scripts with `-c`. Suppressed rules are ignored and do not appear in the ZAP report. |
-| `zap-alert-filters.yaml`  | An Automation Framework `alertFilter` job. Suppressed alerts stay in the report and are marked "False Positive". |
-| `suppression-report.json` | Lists the platform [components](GLOSSARY.md) and [controls](GLOSSARY.md) that justify each suppressed rule, along with the source SSP. Keep this report in the body of evidence. |
-
-For Grype, `finch generate` writes `grype-ignore.yaml` and `grype-suppression-report.json`. Pass the ignore file to Grype with `--config`. Each [vulnerability](GLOSSARY.md) rule applies to all packages.
-
-Finch does not write output if the [mappings file](GLOSSARY.md) has an unknown key or an invalid rule ID. It also writes no output if a [component](GLOSSARY.md) maps rules but implements no [controls](GLOSSARY.md). ZAP rule IDs contain digits only.
-
-### Mapping Expiry
-
-The planned mapping format includes an expiry date for each mapping. A mapping remains valid through its expiry date in UTC. After that date, generation will silently omit its [suppression](GLOSSARY.md). It will not fail the pipeline or issue a warning.
-
-[Platform teams](GLOSSARY.md) need to review expired mappings and remove or renew them. Reporting expired mappings during validation can make cleanup visible. A warning allows unrelated changes to proceed, but a team can miss it. A validation failure requires cleanup before changes can pass, but can block unrelated changes. The validation behavior is still undecided.
-
-See the fictional mappings for [Platform A](examples/platform-a-mappings.yaml), [Platform B](examples/platform-b-mappings.yaml), and [Platform C](examples/platform-c-mappings.yaml). Platform A includes Semgrep mappings as an example, but `finch generate` supports ZAP and Grype. These examples do not establish that a real platform mitigates a [finding](GLOSSARY.md). A ZAP rule can report multiple alert types, and a mapping suppresses the entire rule. Verify each mapping against the platform and scan configuration before use.
-
-[Platform U](examples/platform-u-mappings.yaml) shows an example UDS Core 1.17 service inventory. Its SSP metadata and [component](GLOSSARY.md) UUIDs are examples. Services vary by bundle and configuration. The file has no [control](GLOSSARY.md) or [scanner](GLOSSARY.md) rule mappings. Add them only after you verify the deployed platform and its SSP. See the [UDS Core concepts documentation](https://docs.defenseunicorns.com/core/v1-17/concepts/overview/) for the capability layers.
-
-### Use the Output in GitLab CI
-
-ZAP full and API scans run active rules, such as 40012 and 40018. The baseline scan runs only passive rules, so it does not raise [findings](GLOSSARY.md) from active rules.
-
-```yaml
-finch-suppressions:
-  stage: prep
-  script:
-    - curl --fail --silent --show-error "$PLATFORM_MAPPINGS_URL" --output mappings.yaml
-    - finch generate --mappings mappings.yaml --tool zap --output-dir finch-out
-  artifacts:
-    paths: [finch-out/]
-
-zap-full-scan:
-  stage: test
-  image: ghcr.io/zaproxy/zaproxy:stable
-  needs: [finch-suppressions]
-  script:
-    - mkdir -p /zap/wrk
-    - cp finch-out/zap-rules.conf /zap/wrk/
-    - zap-full-scan.py -t "$TARGET_URL" -c zap-rules.conf -J zap-report.json
-  artifacts:
-    when: always
-    paths: [zap-report.json, finch-out/suppression-report.json]
+![](docs/demo/tui.gif)
+ 
+**How to Invoke the MCP Server**
+```bash
+finch --mode mcp
+```
+ 
+**Step 4.** The [security team](GLOSSARY.md#security-team) publishes their [mappings file](GLOSSARY.md#mappings-file).
+ 
+### Proposing a Component
+ 
+This user flow assumes the [security team](GLOSSARY.md#security-team) has published the [hosting platform's](GLOSSARY.md#hosting-platform) [System Security Plan (SSP)](GLOSSARY.md#system-security-plan) so [users](GLOSSARY.md#user) can reference it. It also assumes a [mappings file](GLOSSARY.md#mappings-file) for the [hosting platform](GLOSSARY.md#hosting-platform) already exists.
+ 
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan) for their [hosting platform](GLOSSARY.md#hosting-platform).
+ 
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file) for their [hosting platform](GLOSSARY.md#hosting-platform).
+ 
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify which implemented [controls](GLOSSARY.md#control) the [component](GLOSSARY.md#component) they want to propose addresses.
+ 
+**Step 4.** The [user](GLOSSARY.md#user) adds the [component](GLOSSARY.md#component) to their local copy of the [mappings file](GLOSSARY.md#mappings-file).
+ 
+```bash
+finch create component \
+  --mappings-file mappings.yaml \
+  --component "$COMPONENT_NAME" 
+```
+ 
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
+ 
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [component](GLOSSARY.md#component) matches the entry in the [SSP](GLOSSARY.md#system-security-plan) and applies to the [environment](GLOSSARY.md#environment) in question.
+ 
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
+ 
+### Proposing a New Control-to-Component Mapping
+ 
+This user flow assumes the [security team](GLOSSARY.md#security-team) has published the [SSP](GLOSSARY.md#system-security-plan) and a [mappings file](GLOSSARY.md#mappings-file) for the target [environment](GLOSSARY.md#environment). It also assumes the [component](GLOSSARY.md#component) in question already exists in the [mappings file](GLOSSARY.md#mappings-file).
+ 
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan).
+ 
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file).
+ 
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify an implemented [control](GLOSSARY.md#control) that the [component](GLOSSARY.md#component) supports in the target [environment](GLOSSARY.md#environment).
+ 
+**Step 4.** The [user](GLOSSARY.md#user) runs `finch` to associate the [control](GLOSSARY.md#control) with the [component](GLOSSARY.md#component) in their local copy of the [mappings file](GLOSSARY.md#mappings-file).
+ 
+```bash
+finch create mapping \
+  --mappings-file mappings.yaml \
+  --component "$COMPONENT_UUID" \
+  --control "$CONTROL_ID"
+```
+ 
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
+ 
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [SSP](GLOSSARY.md#system-security-plan) documents the [component's](GLOSSARY.md#component) support for the implemented [control](GLOSSARY.md#control) in the target [environment](GLOSSARY.md#environment).
+ 
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
+ 
+### Proposing a New Rule-to-Component Mapping
+ 
+This user flow assumes the [security team](GLOSSARY.md#security-team) has published the [SSP](GLOSSARY.md#system-security-plan) and a [mappings file](GLOSSARY.md#mappings-file) for the target [environment](GLOSSARY.md#environment). It also assumes the [component](GLOSSARY.md#component) in question already exists in the [mappings file](GLOSSARY.md#mappings-file).
+ 
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan).
+ 
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file).
+ 
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify an implemented [control](GLOSSARY.md#control) that mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.
+ 
+**Step 4.** The [user](GLOSSARY.md#user) runs `finch` to add a rule-to-[component](GLOSSARY.md#component) [mapping](GLOSSARY.md#mapping) to their local copy of the [mappings file](GLOSSARY.md#mappings-file).
+ 
+```bash
+finch create mapping \
+  --mappings-file mappings.yaml \
+  --component "$COMPONENT_UUID" \
+  --control "$CONTROL_ID" \
+  --scanner "$SCANNER" \
+  --rule "$RULE_ID" \
+  --justification "$JUSTIFICATION" \
+  --expiry "$EXPIRY_DATE"
+```
+ 
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
+ 
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [SSP](GLOSSARY.md#system-security-plan) documents the [control](GLOSSARY.md#control) as implemented and that the [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.
+ 
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
+ 
+### Generating a New Suppression
+ 
+This user flow assumes the [security team](GLOSSARY.md#security-team) has published a [mappings file version](GLOSSARY.md#mappings-file-version) for the [environment](GLOSSARY.md#environment) in question. It also assumes the [user](GLOSSARY.md#user) has an app with a Continuous Integration pipeline that runs a [scanner](GLOSSARY.md#scanner).
+ 
+**Step 1.** A [user](GLOSSARY.md#user) selects the [mappings file version](GLOSSARY.md#mappings-file-version) that matches their app's [environment](GLOSSARY.md#environment).
+ 
+**Step 2.** The [user](GLOSSARY.md#user) configures their app's pipeline to download that [mappings file version](GLOSSARY.md#mappings-file-version) before the [scanner](GLOSSARY.md#scanner) runs.
+ 
+**Step 3.** The [user](GLOSSARY.md#user) adds a `finch` step to their pipeline for each [scanner](GLOSSARY.md#scanner) rule they want to suppress.
+ 
+```bash
+finch create suppression \
+  --mappings-file mappings.yaml \
+  --scanner "$SCANNER" \
+  --rule "$RULE_ID"
 ```
 
-Set `TARGET_URL` to the application as served through the platform. Count [findings](GLOSSARY.md) as mitigated by the gateway or mesh only if the scan passes through them.
+![](docs/demo/generate.gif)
+ 
+**Step 4.** `finch` checks the [mappings file](GLOSSARY.md#mappings-file) for a [mapping](GLOSSARY.md#mapping) that matches the [scanner](GLOSSARY.md#scanner) and rule. It skips [mappings](GLOSSARY.md#mapping) that have expired.
+ 
+**Step 5.** If `finch` finds a valid [mapping](GLOSSARY.md#mapping), it generates a [suppression](GLOSSARY.md#suppression) in the format the [scanner](GLOSSARY.md#scanner) requires.
+ 
+**Step 6.** The pipeline passes the [suppression](GLOSSARY.md#suppression) to the [scanner](GLOSSARY.md#scanner), and the [scanner](GLOSSARY.md#scanner) leaves the suppressed rule out of its findings for the app scan.
+ 
