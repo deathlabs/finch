@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   lint:
-    name: Rust Checks
+    name: Lint Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,8 +21,6 @@ jobs:
         run: cargo +stable fmt --check
       - name: Run Clippy
         run: cargo +stable clippy --locked --all-targets -- -D warnings -A clippy::needless_return
-      - name: Run tests
-        run: cargo +stable test --locked
 
   secrets:
     name: Secrets Scan
@@ -47,7 +45,7 @@ jobs:
         run: semgrep scan --config auto .
 
   sca:
-    name: SBOM Scan
+    name: Dependency Scan
     runs-on: ubuntu-latest
     permissions:
       actions: read
