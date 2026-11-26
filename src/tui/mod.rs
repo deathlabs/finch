@@ -14,19 +14,19 @@ use rusty_bubbletea::{
     Cmd, KeyPressMsg, MouseButton, MouseClickMsg, MouseWheelMsg, Msg, PasteMsg, Program, View,
     WindowSizeMsg, batch, quit, request_window_size, tick,
 };
-use uuid::Uuid;
 
-use self::files::{Component, ExportDocument, Plan, ToolRules};
+use crate::catalog::{SCANNERS, Scanner};
+use crate::error::Error as CoreError;
+use crate::model::{Component, MappingsFile};
+use crate::ops::{self, CreateComponent, MapControl, MapRule};
+use crate::ssp::{self, Plan};
+use crate::store;
 
 const DEFAULT_SSP_PATH: &str = "ssp.json";
 const DEFAULT_TITLE: &str = "WAF";
 const DEFAULT_DESCRIPTION: &str = "Web App Firewall";
 const DEFAULT_PURPOSE: &str = "Filter web traffic";
 const COMPONENT_TYPES: &[&str] = &["software", "service", "hardware"];
-const SECURITY_TOOLS: &[&str] = &["ZAP", "Grype", "Semgrep"];
-const ZAP_RULES: &[&str] = &[
-    "10020", "10021", "10038", "10062", "10202", "40012", "40003", "40018", "90019", "90022",
-];
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Step {
@@ -38,6 +38,9 @@ enum Step {
     Controls,
     Tool,
     Rules,
+    RuleControl,
+    Justification,
+    Expiry,
     AnotherComponent,
     Output,
     Saved,
@@ -71,6 +74,16 @@ struct Completion {
     index: usize,
 }
 
+#[derive(Default)]
+struct RuleBatch {
+    ids: Vec<String>,
+    manual_ids: String,
+    index: usize,
+    control: usize,
+    justification: String,
+    draft: Component,
+}
+
 struct TuiModel {
     step: Step,
     input: String,
@@ -85,6 +98,8 @@ struct TuiModel {
     control_selection: Selection,
     zap_selection: Selection,
     zap_manual: bool,
+    rule_batch: RuleBatch,
+    before_rule_batch: Option<Component>,
     completion: Completion,
     message: String,
     busy: bool,
@@ -136,6 +151,8 @@ impl TuiModel {
             control_selection: Selection::default(),
             zap_selection: Selection::default(),
             zap_manual: false,
+            rule_batch: RuleBatch::default(),
+            before_rule_batch: None,
             completion: Completion::default(),
             message: String::new(),
             width: 80,
@@ -145,7 +162,7 @@ impl TuiModel {
 
     fn load(path: PathBuf) -> Cmd {
         return Some(Box::new(move || {
-            let result = files::load(&path).map_err(|error| {
+            let result = ssp::load(&path).map_err(|error| {
                 format!(
                     "Expected an OSCAL System Security Plan at {}: {error}",
                     path.display()
@@ -185,6 +202,8 @@ impl TuiModel {
         self.control_selection = Selection::default();
         self.tool = 0;
         self.reset_rule_selection();
+        self.rule_batch = RuleBatch::default();
+        self.before_rule_batch = None;
         return;
     }
 
@@ -215,7 +234,15 @@ impl TuiModel {
             Step::Controls => (Step::Purpose, self.component.purpose.clone()),
             Step::Tool => (Step::Controls, String::new()),
             Step::Rules => (Step::Tool, String::new()),
-            Step::AnotherComponent => (Step::Rules, String::new()),
+            Step::RuleControl => (Step::Rules, self.rule_batch.manual_ids.clone()),
+            Step::Justification => (Step::RuleControl, String::new()),
+            Step::Expiry => (Step::Justification, self.rule_batch.justification.clone()),
+            Step::AnotherComponent => {
+                if let Some(component) = self.before_rule_batch.take() {
+                    self.component = component;
+                }
+                (Step::Rules, String::new())
+            }
             Step::Plan | Step::Output | Step::Saved => return,
         };
         self.enter(step, input);
@@ -247,17 +274,38 @@ impl TuiModel {
                 Step::Controls
             }
             Step::Controls => {
-                self.component.controls = self.control_selection.selected.iter().cloned().collect();
+                if let Err(error) = self.submit_controls() {
+                    self.message = error.to_string();
+                    return None;
+                }
                 Step::Tool
             }
             Step::Tool => Step::Rules,
             Step::Rules => {
                 if let Err(error) = self.submit_rules() {
-                    self.message = error.to_owned();
+                    self.message = error.to_string();
                     return None;
                 }
-                Step::AnotherComponent
+                Step::RuleControl
             }
+            Step::RuleControl => Step::Justification,
+            Step::Justification => {
+                match ops::non_empty(input, "justification") {
+                    Ok(justification) => self.rule_batch.justification = justification.to_owned(),
+                    Err(error) => {
+                        self.message = error.to_string();
+                        return None;
+                    }
+                }
+                Step::Expiry
+            }
+            Step::Expiry => match self.submit_expiry() {
+                Ok(next) => next,
+                Err(error) => {
+                    self.message = error.to_string();
+                    return None;
+                }
+            },
             Step::AnotherComponent => {
                 let another: bool = match input.to_ascii_lowercase().as_str() {
                     "y" => true,
@@ -267,8 +315,20 @@ impl TuiModel {
                         return None;
                     }
                 };
-                self.component.uuid = Uuid::new_v4().to_string();
-                self.components.push(std::mem::take(&mut self.component));
+                let input: CreateComponent = CreateComponent {
+                    component_name: self.component.title.clone(),
+                    component_type: self.component.component_type.clone(),
+                    description: self.component.description.clone(),
+                    purpose: self.component.purpose.clone(),
+                };
+                if let Err(error) = ops::create_component(&mut self.components, &input) {
+                    self.message = error.to_string();
+                    return None;
+                }
+                let component: &mut Component =
+                    self.components.last_mut().expect("component added");
+                component.controls = std::mem::take(&mut self.component.controls);
+                component.rules = std::mem::take(&mut self.component.rules);
                 self.reset_component();
                 if another {
                     Step::Title
@@ -287,10 +347,10 @@ impl TuiModel {
                     return None;
                 };
                 let path: PathBuf = PathBuf::from(input);
-                let document: ExportDocument = ExportDocument::new(plan, &self.components);
+                let document: MappingsFile = MappingsFile::from_plan(plan, self.components.clone());
                 self.busy = true;
                 return Some(Box::new(move || {
-                    let result = files::save(&path, &document)
+                    let result = store::save(&path, &document)
                         .map_err(|error| format!("Could not save {}: {error}", path.display()));
                     return Some(Box::new(Saved { path, result }));
                 }));
@@ -301,45 +361,99 @@ impl TuiModel {
         return None;
     }
 
-    fn submit_rules(&mut self) -> Result<(), &'static str> {
-        let tool: &str = SECURITY_TOOLS[self.tool];
-        let mut rules: Vec<String> = self
+    fn submit_controls(&mut self) -> Result<(), CoreError> {
+        let mut component: Component = self.component.clone();
+        component.controls.clear();
+        for control in &self.control_selection.selected {
+            let input: MapControl = MapControl {
+                component_name: component.title.clone(),
+                control: control.clone(),
+            };
+            ops::map_control(std::slice::from_mut(&mut component), &input)?;
+        }
+        for group in &component.rules {
+            for rule in &group.rules {
+                ops::require_control(&component, &rule.control)?;
+            }
+        }
+        self.component = component;
+        return Ok(());
+    }
+
+    fn submit_rules(&mut self) -> Result<(), CoreError> {
+        let scanner: Scanner = self.scanner();
+        let mut ids: Vec<String> = self
             .input
             .split(',')
             .map(str::trim)
             .filter(|rule| !rule.is_empty())
-            .map(str::to_owned)
-            .collect();
-
-        if tool == "ZAP" {
-            if !rules
-                .iter()
-                .all(|rule| rule.bytes().all(|byte| byte.is_ascii_digit()))
-            {
-                return Err("ZAP rule IDs must contain digits only.");
-            }
-            rules.extend(self.zap_selection.selected.iter().cloned());
-            rules.sort();
-            rules.dedup();
+            .chain(self.zap_selection.selected.iter().map(String::as_str))
+            .map(|rule| scanner.normalize_rule(rule))
+            .collect::<Result<_, _>>()?;
+        if ids.is_empty() {
+            return Err(CoreError::Invalid(
+                "Select or enter at least one rule ID.".to_owned(),
+            ));
         }
-        if rules.is_empty() {
-            return Err("Select or enter at least one rule ID.");
+        if scanner == Scanner::Zap {
+            ids.sort();
+            ids.dedup();
+        } else {
+            let mut seen: BTreeSet<String> = BTreeSet::new();
+            ids.retain(|id| seen.insert(id.clone()));
         }
-        self.component.rules.push(ToolRules {
-            tool: tool.to_owned(),
-            rules,
-        });
-        self.reset_rule_selection();
+        if self.component.controls.is_empty() {
+            return Err(CoreError::Invalid(
+                "Select at least one control for this component before adding rules.".to_owned(),
+            ));
+        }
+        self.rule_batch = RuleBatch {
+            ids,
+            manual_ids: self.input.clone(),
+            draft: self.component.clone(),
+            ..RuleBatch::default()
+        };
         return Ok(());
     }
 
+    fn submit_expiry(&mut self) -> Result<Step, CoreError> {
+        let batch: &mut RuleBatch = &mut self.rule_batch;
+        let input: MapRule = MapRule {
+            component_name: self.component.title.clone(),
+            scanner: SCANNERS[self.tool].name().to_owned(),
+            rule: batch.ids[batch.index].clone(),
+            control: self.component.controls[batch.control].clone(),
+            justification: batch.justification.clone(),
+            expiry: self.input.clone(),
+        };
+        ops::map_rule(std::slice::from_mut(&mut batch.draft), &input)?;
+        batch.index += 1;
+        batch.control = 0;
+        batch.justification.clear();
+        if batch.index < batch.ids.len() {
+            return Ok(Step::RuleControl);
+        }
+        self.before_rule_batch = Some(std::mem::replace(
+            &mut self.component,
+            std::mem::take(&mut batch.draft),
+        ));
+        self.reset_rule_selection();
+        return Ok(Step::AnotherComponent);
+    }
+
+    fn scanner(&self) -> Scanner {
+        return SCANNERS[self.tool];
+    }
+
     fn is_zap_step(&self) -> bool {
-        return self.step == Step::Rules && SECURITY_TOOLS[self.tool] == "ZAP";
+        return self.step == Step::Rules && self.scanner() == Scanner::Zap;
     }
 
     fn accepts_text(&self) -> bool {
         return match self.step {
-            Step::ComponentType | Step::Controls | Step::Tool | Step::Saved => false,
+            Step::ComponentType | Step::Controls | Step::Tool | Step::RuleControl | Step::Saved => {
+                false
+            }
             Step::Rules => !self.is_zap_step() || self.zap_manual,
             _ => true,
         };
@@ -376,6 +490,7 @@ impl TuiModel {
             "esc" => self.back(),
             "ctrl+t" if self.step == Step::AnotherComponent => {
                 self.tool = 0;
+                self.before_rule_batch = None;
                 self.enter(Step::Tool, String::new());
             }
             "ctrl+d" if self.step == Step::Tool => {
@@ -390,8 +505,8 @@ impl TuiModel {
                 }
             }
             "space" if self.is_zap_step() && !self.zap_manual => {
-                self.zap_selection
-                    .toggle(ZAP_RULES[self.zap_selection.cursor]);
+                let rule: &str = self.scanner().known_rules()[self.zap_selection.cursor];
+                self.zap_selection.toggle(rule);
             }
             "backspace" | "ctrl+h" if self.accepts_text() => {
                 self.clear_completions();
@@ -415,9 +530,11 @@ impl TuiModel {
         let (cursor, count): (&mut usize, usize) = match self.step {
             Step::ComponentType => (&mut self.component_type, COMPONENT_TYPES.len()),
             Step::Controls => (&mut self.control_selection.cursor, self.controls.len()),
-            Step::Tool => (&mut self.tool, SECURITY_TOOLS.len()),
+            Step::Tool => (&mut self.tool, SCANNERS.len()),
+            Step::RuleControl => (&mut self.rule_batch.control, self.component.controls.len()),
             Step::Rules if self.is_zap_step() && !self.zap_manual => {
-                (&mut self.zap_selection.cursor, ZAP_RULES.len())
+                let count: usize = self.scanner().known_rules().len();
+                (&mut self.zap_selection.cursor, count)
             }
             _ => return,
         };
@@ -552,4 +669,55 @@ pub(super) fn run(path: Option<PathBuf>) -> Result<(), Box<dyn Error>> {
 
     Program::new(TuiModel::new(path)).run()?;
     return Ok(());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn captures_metadata_for_each_selected_rule() {
+        let mut model: TuiModel = TuiModel::new(None);
+        model.component.title = "Gateway".to_owned();
+        model.component.controls = vec!["sc-7".to_owned(), "si-10".to_owned()];
+        model.zap_selection.selected.insert("10020".to_owned());
+        model.zap_selection.selected.insert("10038".to_owned());
+
+        model.enter(Step::Rules, String::new());
+        model.submit();
+        assert!(model.step == Step::RuleControl);
+        model.move_cursor(true);
+        model.submit();
+        assert!(model.step == Step::Justification);
+        model.submit();
+        assert_eq!(model.message, "expected a non-empty justification");
+        model.input = "First justification".to_owned();
+        model.submit();
+        assert!(model.step == Step::Expiry);
+        model.input = "2027-02-29".to_owned();
+        model.submit();
+        assert_eq!(
+            model.message,
+            "expected a valid expiry date in YYYY-MM-DD format"
+        );
+        model.input = "2028-02-29".to_owned();
+        model.submit();
+        assert!(model.step == Step::RuleControl);
+        assert!(model.component.rules.is_empty());
+
+        model.submit();
+        model.input = "Second justification".to_owned();
+        model.submit();
+        model.input = "2028-03-01".to_owned();
+        model.submit();
+        assert!(model.step == Step::AnotherComponent);
+        let rules = &model.component.rules[0].rules;
+        assert_eq!(rules.len(), 2);
+        assert_eq!(rules[0].control, "si-10");
+        assert_eq!(rules[0].justification, "First justification");
+        assert_eq!(rules[0].expiry, "2028-02-29");
+        assert_eq!(rules[1].control, "sc-7");
+        assert_eq!(rules[1].justification, "Second justification");
+        assert_eq!(rules[1].expiry, "2028-03-01");
+    }
 }

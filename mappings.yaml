@@ -15,7 +15,10 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
-    - '10020'
+    - id: "10020"
+      control: ac-1
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
 - uuid: e63ae8f8-19b6-4584-8e89-63c2055dc4a2
   title: NSG
   type: ''

@@ -1,3 +1,4 @@
+# This tape requires the suppression generator. The Rust rewrite does not provide it yet.
 # Run from the repository root with Finch, Grype, VHS, ttyd, and ffmpeg installed.
 # Grype needs a vulnerability database containing GHSA-jfh8-c2jp-5v3q.
 Output docs/demo/generate.gif

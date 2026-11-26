@@ -35,6 +35,14 @@ Space
 Sleep 2s
 Enter
 Sleep 1s
+Enter
+Sleep 1s
+Type "The gateway filters these requests before forwarding them."
+Enter
+Sleep 1s
+Type "2027-11-25"
+Enter
+Sleep 1s
 Type "n"
 Enter
 Sleep 1s

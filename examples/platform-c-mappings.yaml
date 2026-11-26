@@ -16,8 +16,14 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
-    - "10020"
-    - "10021"
+    - id: "10020"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "10021"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
 - uuid: 6f1c2e0c-0000-4000-8000-000000000002
   title: TLS Gateway
   type: service
@@ -28,4 +34,7 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
-    - "10035"
+    - id: "10035"
+      control: sc-8
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"

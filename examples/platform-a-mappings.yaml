@@ -16,8 +16,14 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
-    - "40012"
-    - "40018"
+    - id: "40012"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "40018"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
 - uuid: 6f1c2e0a-0000-4000-8000-000000000002
   title: Service Mesh
   type: software
@@ -28,8 +34,14 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
-    - "10020"
-    - "10038"
+    - id: "10020"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "10038"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
 - uuid: efaab6e9-c52b-4c55-acb2-55240d7720e1
   title: WAF
   type: service
@@ -40,13 +52,28 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: Semgrep
     rules:
-    - python.django.security.audit.xss.filter-with-is-safe.filter-with-is-safe
-    - python.django.security.audit.xss.formathtml-fstring-parameter.formathtml-fstring-parameter
-    - python.django.security.injection.raw-html-format.raw-html-format
+    - id: "python.django.security.audit.xss.filter-with-is-safe.filter-with-is-safe"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "python.django.security.audit.xss.formathtml-fstring-parameter.formathtml-fstring-parameter"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "python.django.security.injection.raw-html-format.raw-html-format"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
   - tool: ZAP
     rules:
-    - "10021"
-    - "40012"
+    - id: "10021"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "40012"
+      control: sc-7
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
 - uuid: 8fedef38-c730-4b6e-be48-ec27dda29d7e
   title: LAW
   type: service
@@ -57,9 +84,21 @@ components:
   security_rules_mitigated_by_this_component:
   - tool: Semgrep
     rules:
-    - python.django.security.audit.xss.filter-with-is-safe.filter-with-is-safe
-    - python.django.security.injection.raw-html-template-parameter.raw-html-template-parameter
+    - id: "python.django.security.audit.xss.filter-with-is-safe.filter-with-is-safe"
+      control: au-4
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "python.django.security.injection.raw-html-template-parameter.raw-html-template-parameter"
+      control: au-4
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
   - tool: ZAP
     rules:
-    - "10062"
-    - "40003"
+    - id: "10062"
+      control: au-4
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"
+    - id: "40003"
+      control: au-4
+      justification: Example entry. Verify how the implemented control addresses this rule before use.
+      expiry: "2027-11-25"

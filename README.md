@@ -5,98 +5,97 @@
 Shape what your [scanners](GLOSSARY.md#scanner) can see.
  
 ## Overview
-Finch gives scanners the [context](GLOSSARY.md#context) they need about your [hosting platform's](GLOSSARY.md#hosting-platform) security [controls](GLOSSARY.md#control) to identify and ignore false positives.
+
+Finch gives [scanners](GLOSSARY.md#scanner) the [context](GLOSSARY.md#context) they need about your [hosting platform's](GLOSSARY.md#hosting-platform) security [controls](GLOSSARY.md#control) to identify and ignore false positives.
  
-## User Flows
+## [User](GLOSSARY.md#user) Flows
  
-### Creating a Mappings File
+### Creating a [Mappings File](GLOSSARY.md#mappings-file)
  
-This user flow is focused on the [security team](GLOSSARY.md#security-team) user persona and assumes they have a [System Security Plan (SSP)](GLOSSARY.md#system-security-plan) for their hosting platform.
+This [user](GLOSSARY.md#user) flow is focused on the [security team](GLOSSARY.md#security-team) [user](GLOSSARY.md#user) persona and assumes they have a [System Security Plan (SSP)](GLOSSARY.md#system-security-plan) for their [hosting platform](GLOSSARY.md#hosting-platform).
  
-**Step 1.** The security team identifies the [environment](GLOSSARY.md#environment) that the [mappings file](GLOSSARY.md#mappings-file) will cover.
+**Step 1.** The [security team](GLOSSARY.md#security-team) identifies the [environment](GLOSSARY.md#environment) that the [mappings file](GLOSSARY.md#mappings-file) will cover.
  
-**Step 2.** The security team reviews the SSP to identify the [components](GLOSSARY.md#component) and implemented controls that apply to that environment.
+**Step 2.** The [security team](GLOSSARY.md#security-team) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify the [components](GLOSSARY.md#component) and implemented [controls](GLOSSARY.md#control) that apply to that [environment](GLOSSARY.md#environment).
  
-**Step 3.** The security team creates a mappings file using one of `finch`'s two modes: the Terminal User Interface (TUI) or the Model Context Protocol (MCP) server.
+**Step 3.** The [security team](GLOSSARY.md#security-team) creates a [mappings file](GLOSSARY.md#mappings-file) in the terminal interface (TUI). For each selected rule, choose an implemented [control](GLOSSARY.md#control) and enter a [justification](GLOSSARY.md#justification) and an [expiry](GLOSSARY.md#expiry) date in YYYY-MM-DD format.
  
-**How to Invoke TUI Mode**
+**Open the Terminal Interface**
+
 ```bash
-finch --mode tui
+finch tui --ssp ssp.json
 ```
 
 ![](docs/demo/tui.gif)
  
-**How to Invoke the MCP Server**
-```bash
-finch --mode mcp
-```
+`finch mcp` is reserved for the Model Context Protocol server.
  
-**Step 4.** The security team publishes their mappings file.
+**Step 4.** The [security team](GLOSSARY.md#security-team) publishes their [mappings file](GLOSSARY.md#mappings-file).
  
-### Proposing a Component
+### Proposing a [Component](GLOSSARY.md#component)
  
-This user flow assumes the security team has published the hosting platform's System Security Plan (SSP) so [users](GLOSSARY.md#user) can reference it. It also assumes a mappings file for the hosting platform already exists.
+This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#security-team) has published the [hosting platform's](GLOSSARY.md#hosting-platform) [System Security Plan](GLOSSARY.md#system-security-plan) ([SSP](GLOSSARY.md#system-security-plan)) so [users](GLOSSARY.md#user) can reference it. It also assumes a [mappings file](GLOSSARY.md#mappings-file) for the [hosting platform](GLOSSARY.md#hosting-platform) already exists.
  
-**Step 1.** A user downloads the SSP for their hosting platform.
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan) for their [hosting platform](GLOSSARY.md#hosting-platform).
  
-**Step 2.** The user downloads the mappings file for their hosting platform.
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file) for their [hosting platform](GLOSSARY.md#hosting-platform).
  
-**Step 3.** The user reviews the SSP to identify which implemented controls the component they want to propose addresses.
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify which implemented [controls](GLOSSARY.md#control) the [component](GLOSSARY.md#component) they want to propose addresses.
  
-**Step 4.** The user adds the component to their local copy of the mappings file.
+**Step 4.** The [user](GLOSSARY.md#user) adds the [component](GLOSSARY.md#component) to their local copy of the [mappings file](GLOSSARY.md#mappings-file).
  
 ```bash
-finch create component \
-  --mappings-file mappings.yaml \
-  --component-name "$COMPONENT_NAME"
+finch create --mappings-file mappings.yaml component \
+  --component-name "$COMPONENT_NAME" \
+  --type service \
+  --description "$DESCRIPTION" \
+  --purpose "$PURPOSE"
 ```
 
-**Step 5.** The user proposes the change to the security team.
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
  
-**Step 6.** The security team reviews the proposal. They check that the component matches the entry in the SSP and applies to the environment in question.
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [component](GLOSSARY.md#component) matches the entry in the [SSP](GLOSSARY.md#system-security-plan) and applies to the [environment](GLOSSARY.md#environment) in question.
  
-**Step 7.** If the security team approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
  
-### Proposing a New Control-to-Component Mapping
+### Proposing a New Control-to-Component [Mapping](GLOSSARY.md#mapping)
  
-This user flow assumes the security team has published the SSP and a mappings file for the target environment. It also assumes the component in question already exists in the mappings file.
+This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#security-team) has published the [SSP](GLOSSARY.md#system-security-plan) and a [mappings file](GLOSSARY.md#mappings-file) for the target [environment](GLOSSARY.md#environment). It also assumes the [component](GLOSSARY.md#component) in question already exists in the [mappings file](GLOSSARY.md#mappings-file).
  
-**Step 1.** A user downloads the SSP.
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan).
  
-**Step 2.** The user downloads the mappings file.
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file).
  
-**Step 3.** The user reviews the SSP to identify an implemented control that the component supports in the target environment.
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify an implemented [control](GLOSSARY.md#control) that the [component](GLOSSARY.md#component) supports in the target [environment](GLOSSARY.md#environment).
  
-**Step 4.** The user runs `finch` to associate the control with the component in their local copy of the mappings file.
+**Step 4.** The [user](GLOSSARY.md#user) runs `finch` to associate the [control](GLOSSARY.md#control) with the [component](GLOSSARY.md#component) in their local copy of the [mappings file](GLOSSARY.md#mappings-file).
  
 ```bash
-finch create mapping \
-  --mappings-file mappings.yaml \
+finch create --mappings-file mappings.yaml control \
   --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID"
 ```
  
-**Step 5.** The user proposes the change to the security team.
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
  
-**Step 6.** The security team reviews the proposal. They check that the SSP documents the component's support for the implemented control in the target environment.
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [SSP](GLOSSARY.md#system-security-plan) documents the [component's](GLOSSARY.md#component) support for the implemented [control](GLOSSARY.md#control) in the target [environment](GLOSSARY.md#environment).
  
-**Step 7.** If the security team approves the proposal, they publish a new mappings file version.
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
  
-### Proposing a New Rule-to-Component Mapping
+### Proposing a New Rule-to-Component [Mapping](GLOSSARY.md#mapping)
  
-This user flow assumes the security team has published the SSP and a mappings file for the target environment. It also assumes the component in question already exists in the mappings file.
+This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#security-team) has published the [SSP](GLOSSARY.md#system-security-plan) and a [mappings file](GLOSSARY.md#mappings-file) for the target [environment](GLOSSARY.md#environment). It also assumes the [component](GLOSSARY.md#component) in question already exists in the [mappings file](GLOSSARY.md#mappings-file).
  
-**Step 1.** A user downloads the SSP.
+**Step 1.** A [user](GLOSSARY.md#user) downloads the [SSP](GLOSSARY.md#system-security-plan).
  
-**Step 2.** The user downloads the mappings file.
+**Step 2.** The [user](GLOSSARY.md#user) downloads the [mappings file](GLOSSARY.md#mappings-file).
  
-**Step 3.** The user reviews the SSP to identify an implemented control that mitigates the [risk](GLOSSARY.md#risk) associated with the scanner rule.
+**Step 3.** The [user](GLOSSARY.md#user) reviews the [SSP](GLOSSARY.md#system-security-plan) to identify an implemented [control](GLOSSARY.md#control) that mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.
  
-**Step 4.** The user runs `finch` to add a rule-to-component [mapping](GLOSSARY.md#mapping) to their local copy of the mappings file.
+**Step 4.** The [user](GLOSSARY.md#user) runs `finch` to add the rule to their local copy of the [mappings file](GLOSSARY.md#mappings-file). The [component](GLOSSARY.md#component) must already list the [control](GLOSSARY.md#control).
  
 ```bash
-finch create mapping \
-  --mappings-file mappings.yaml \
+finch create --mappings-file mappings.yaml rule \
   --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID" \
   --scanner "$SCANNER" \
@@ -105,34 +104,20 @@ finch create mapping \
   --expiry "$EXPIRY_DATE"
 ```
  
-**Step 5.** The user proposes the change to the security team.
+**Step 5.** The [user](GLOSSARY.md#user) proposes the change to the [security team](GLOSSARY.md#security-team).
  
-**Step 6.** The security team reviews the proposal. They check that the SSP documents the control as implemented and that the control mitigates the risk associated with the scanner rule.
+**Step 6.** The [security team](GLOSSARY.md#security-team) reviews the proposal. They check that the [SSP](GLOSSARY.md#system-security-plan) documents the [control](GLOSSARY.md#control) as implemented and that the [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.
  
-**Step 7.** If the security team approves the proposal, they publish a new mappings file version.
+**Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
  
-### Generating a New Suppression
- 
-This user flow assumes the security team has published a mappings file version for the environment in question. It also assumes the user has an app with a Continuous Integration pipeline that runs a scanner.
- 
-**Step 1.** A user selects the mappings file version that matches their app's environment.
- 
-**Step 2.** The user configures their app's pipeline to download that mappings file version before the scanner runs.
- 
-**Step 3.** The user adds a `finch` step to their pipeline for each scanner rule they want to suppress.
- 
-```bash
-finch create suppression \
-  --mappings-file mappings.yaml \
-  --scanner "$SCANNER" \
-  --rule "$RULE_ID"
-```
+### [Mappings File](GLOSSARY.md#mappings-file) Schema
+
+Every rule entry is an object. Include an `id`, [`control`](GLOSSARY.md#control), [`justification`](GLOSSARY.md#justification), and [`expiry`](GLOSSARY.md#expiry) for each rule. Finch rejects unrecognized keys. See [the example](mappings.yaml).
+
+The `create` commands report an error if the entry already exists. The `--mappings-file` option defaults to `mappings.yaml`.
+
+### Generating a New [Suppression](GLOSSARY.md#suppression)
+
+The [suppression](GLOSSARY.md#suppression) generator is pending in the Rust rewrite. The demo shows how a pipeline uses a [mappings file version](GLOSSARY.md#mappings-file-version) for its [environment](GLOSSARY.md#environment) to configure a [scanner](GLOSSARY.md#scanner).
 
 ![](docs/demo/generate.gif)
- 
-**Step 4.** `finch` checks the mappings file for a mapping that matches the scanner and rule. It skips mappings that have expired.
- 
-**Step 5.** If `finch` finds a valid mapping, it generates a [suppression](GLOSSARY.md#suppression) in the format the scanner requires.
- 
-**Step 6.** The pipeline passes the suppression to the scanner, and the scanner leaves the suppressed rule out of its [findings](GLOSSARY.md#finding) for the app scan.
- 

@@ -3,8 +3,10 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::{
     COMPONENT_TYPES, DEFAULT_DESCRIPTION, DEFAULT_PURPOSE, DEFAULT_SSP_PATH, DEFAULT_TITLE,
-    SECURITY_TOOLS, Selection, Step, TuiModel, ZAP_RULES,
+    Selection, Step, TuiModel,
 };
+
+use crate::catalog::{SCANNERS, Scanner};
 
 const STAGES: &[&str] = &[
     "Load System Security Plan (SSP)",
@@ -75,7 +77,12 @@ impl Screen {
                 15,
             )
         } else {
-            (ZAP_RULES.len(), &model.zap_selection, "Rules", 13)
+            (
+                model.scanner().known_rules().len(),
+                &model.zap_selection,
+                "Rules",
+                13,
+            )
         };
         if count == 0 {
             self.line(model, "No controls found in the SSP.", Style::Detail);
@@ -86,7 +93,7 @@ impl Screen {
             let item: &str = if is_controls {
                 &model.controls[index]
             } else {
-                ZAP_RULES[index]
+                model.scanner().known_rules()[index]
             };
             let prefix: &str = if selection.cursor == index && !model.is_zap_manual() {
                 "> "
@@ -173,7 +180,12 @@ impl TuiModel {
             Step::Plan => 0,
             Step::Title | Step::ComponentType | Step::Description | Step::Purpose => 1,
             Step::Controls => 2,
-            Step::Tool | Step::Rules | Step::AnotherComponent => 3,
+            Step::Tool
+            | Step::Rules
+            | Step::RuleControl
+            | Step::Justification
+            | Step::Expiry
+            | Step::AnotherComponent => 3,
             Step::Output | Step::Saved => 4,
         };
 
@@ -216,7 +228,7 @@ impl TuiModel {
     }
 
     fn prompt(&self) -> Option<(String, Style)> {
-        let rules_prompt: String;
+        let rule_prompt: String;
         let (number, title): (usize, &str) = match self.step {
             Step::Plan => (1, "Enter the file path to your SSP."),
             Step::Title => (1, "Enter a component title."),
@@ -227,13 +239,23 @@ impl TuiModel {
             Step::Tool => (1, "Select a scanner."),
             Step::Rules if self.is_zap_step() => (2, "Select one or more ZAP rules."),
             Step::Rules => {
-                rules_prompt = format!(
+                rule_prompt = format!(
                     "Enter rules for {} (comma separated).",
-                    SECURITY_TOOLS[self.tool]
+                    self.scanner().name()
                 );
-                (2, &rules_prompt)
+                (2, &rule_prompt)
             }
-            Step::AnotherComponent => (3, "Add another component (y/N)?"),
+            Step::RuleControl | Step::Justification | Step::Expiry => {
+                let rule: &str = &self.rule_batch.ids[self.rule_batch.index];
+                let (number, action): (usize, &str) = match self.step {
+                    Step::RuleControl => (3, "Select an implemented control for rule"),
+                    Step::Justification => (4, "Enter a justification for rule"),
+                    _ => (5, "Enter an expiry date (YYYY-MM-DD) for rule"),
+                };
+                rule_prompt = format!("{action} {rule}.");
+                (number, &rule_prompt)
+            }
+            Step::AnotherComponent => (6, "Add another component (y/N)?"),
             Step::Output => (1, "Enter the mappings file path."),
             Step::Saved => return None,
         };
@@ -253,7 +275,24 @@ impl TuiModel {
         }
         match self.step {
             Step::ComponentType => screen.choices(self, COMPONENT_TYPES, self.component_type),
-            Step::Tool => screen.choices(self, SECURITY_TOOLS, self.tool),
+            Step::Tool => {
+                let choices: Vec<&str> = SCANNERS.iter().copied().map(Scanner::name).collect();
+                screen.choices(self, &choices, self.tool);
+            }
+            Step::RuleControl => {
+                let selection: Selection = Selection {
+                    cursor: self.rule_batch.control,
+                    ..Selection::default()
+                };
+                let visible: std::ops::Range<usize> =
+                    selection.visible(self.component.controls.len(), self.height, 13);
+                let cursor: usize = selection.cursor - visible.start;
+                let choices: Vec<&str> = self.component.controls[visible]
+                    .iter()
+                    .map(String::as_str)
+                    .collect();
+                screen.choices(self, &choices, cursor);
+            }
             Step::Controls => screen.checklist(self),
             Step::Rules if self.is_zap_step() => {
                 screen.checklist(self);
@@ -292,7 +331,9 @@ impl TuiModel {
         }
         return match self.step {
             Step::Plan => "enter: continue | tab: cycle JSON files | ctrl+c: quit",
-            Step::ComponentType => "enter: continue | ↑/↓: select | esc: back | ctrl+c: quit",
+            Step::ComponentType | Step::RuleControl => {
+                "enter: continue | ↑/↓: select | esc: back | ctrl+c: quit"
+            }
             Step::Controls => {
                 "enter: continue | ↑/↓: move | space / click: select | esc: back | ctrl+c: quit"
             }

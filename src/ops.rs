@@ -1,0 +1,351 @@
+//! Mutate an in-memory mappings document. File-backed callers should perform
+//! these operations inside [crate::store::update].
+//!
+//! All operations return [Error::AlreadyExists] for duplicates and leave the
+//! document unchanged on error.
+
+use chrono::NaiveDate;
+use clap::Args;
+use serde::Deserialize;
+use uuid::Uuid;
+
+use crate::catalog::Scanner;
+use crate::error::Error;
+use crate::model::{Component, RuleMapping, ScannerRules};
+
+#[derive(Args, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateComponent {
+    #[arg(long)]
+    pub component_name: String,
+    #[arg(long = "type")]
+    pub component_type: String,
+    #[arg(long)]
+    pub description: String,
+    #[arg(long)]
+    pub purpose: String,
+}
+
+#[derive(Args, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MapControl {
+    #[arg(long)]
+    pub component_name: String,
+    #[arg(long)]
+    pub control: String,
+}
+
+#[derive(Args, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MapRule {
+    #[arg(long)]
+    pub component_name: String,
+    #[arg(long)]
+    pub control: String,
+    #[arg(long)]
+    pub scanner: String,
+    #[arg(long)]
+    pub rule: String,
+    #[arg(long)]
+    pub justification: String,
+    #[arg(long, value_name = "YYYY-MM-DD")]
+    pub expiry: String,
+}
+
+/// Add a component. Its name must be unique within the document.
+pub fn create_component(
+    components: &mut Vec<Component>,
+    input: &CreateComponent,
+) -> Result<(), Error> {
+    let title: &str = non_empty(&input.component_name, "component name")?;
+    let component_type: &str = non_empty(&input.component_type, "component type")?;
+    let description: &str = non_empty(&input.description, "description")?;
+    let purpose: &str = non_empty(&input.purpose, "purpose")?;
+    if components.iter().any(|component| component.title == title) {
+        return Err(Error::AlreadyExists(format!(
+            "expected a new component name, but {title:?} already exists"
+        )));
+    }
+    components.push(Component {
+        uuid: Uuid::new_v4().to_string(),
+        title: title.to_owned(),
+        component_type: component_type.to_owned(),
+        description: description.to_owned(),
+        purpose: purpose.to_owned(),
+        controls: Vec::new(),
+        rules: Vec::new(),
+    });
+    return Ok(());
+}
+
+/// Associate a control ID with an existing component.
+pub fn map_control(components: &mut [Component], input: &MapControl) -> Result<(), Error> {
+    let control: &str = non_empty(&input.control, "control ID")?;
+    let component: &mut Component = find_component(components, &input.component_name)?;
+    if component
+        .controls
+        .iter()
+        .any(|existing| existing == control)
+    {
+        return Err(Error::AlreadyExists(format!(
+            "control {control:?} is already associated with {:?}",
+            component.title
+        )));
+    }
+    component.controls.push(control.to_owned());
+    return Ok(());
+}
+
+/// Add a rule for a control the component already implements. Within the
+/// component, the scanner, normalized rule ID and control identify a mapping.
+pub fn map_rule(components: &mut [Component], input: &MapRule) -> Result<(), Error> {
+    let (scanner, rule_mapping): (Scanner, RuleMapping) = input.validated()?;
+    let component: &mut Component = find_component(components, &input.component_name)?;
+    require_control(component, &rule_mapping.control)?;
+
+    for group in &component.rules {
+        if !scanner.name().eq_ignore_ascii_case(&group.tool) {
+            continue;
+        }
+        for existing in &group.rules {
+            if existing.control == rule_mapping.control
+                && scanner.normalize_rule(&existing.id)? == rule_mapping.id
+            {
+                return Err(Error::AlreadyExists(format!(
+                    "expected a new mapping for scanner {:?}, rule {:?}, and control {:?}",
+                    scanner.name(),
+                    rule_mapping.id,
+                    rule_mapping.control
+                )));
+            }
+        }
+    }
+    if let Some(group) = component
+        .rules
+        .iter_mut()
+        .find(|group| scanner.name().eq_ignore_ascii_case(&group.tool))
+    {
+        group.rules.push(rule_mapping);
+    } else {
+        component.rules.push(ScannerRules {
+            tool: scanner.name().to_owned(),
+            rules: vec![rule_mapping],
+        });
+    }
+    return Ok(());
+}
+
+impl MapRule {
+    fn validated(&self) -> Result<(Scanner, RuleMapping), Error> {
+        let scanner: Scanner = Scanner::find(&self.scanner)?;
+        return Ok((
+            scanner,
+            RuleMapping {
+                id: scanner.normalize_rule(&self.rule)?,
+                control: non_empty(&self.control, "control ID")?.to_owned(),
+                justification: non_empty(&self.justification, "justification")?.to_owned(),
+                expiry: validate_expiry(&self.expiry)?
+                    .format("%Y-%m-%d")
+                    .to_string(),
+            },
+        ));
+    }
+}
+
+pub fn validate_expiry(expiry: &str) -> Result<NaiveDate, Error> {
+    let expiry: &str = expiry.trim();
+    let invalid = || Error::Invalid("expected a valid expiry date in YYYY-MM-DD format".to_owned());
+    let date: NaiveDate = NaiveDate::parse_from_str(expiry, "%Y-%m-%d").map_err(|_| invalid())?;
+    if expiry.len() != 10
+        || date.format("%Y-%m-%d").to_string() != expiry
+        || expiry.starts_with("0000")
+    {
+        return Err(invalid());
+    }
+    return Ok(date);
+}
+
+pub(crate) fn non_empty<'a>(value: &'a str, field: &str) -> Result<&'a str, Error> {
+    let value: &str = value.trim();
+    if value.is_empty() {
+        return Err(Error::Invalid(format!("expected a non-empty {field}")));
+    }
+    return Ok(value);
+}
+
+pub(crate) fn require_control(component: &Component, control: &str) -> Result<(), Error> {
+    if !component
+        .controls
+        .iter()
+        .any(|existing| existing == control)
+    {
+        return Err(Error::NotFound(format!(
+            "expected control {control:?} to be associated with {:?}",
+            component.title
+        )));
+    }
+    return Ok(());
+}
+
+fn find_component<'a>(
+    components: &'a mut [Component],
+    name: &str,
+) -> Result<&'a mut Component, Error> {
+    let name: &str = non_empty(name, "component name")?;
+    let mut matches = components
+        .iter_mut()
+        .filter(|component| component.title == name);
+    let component: &mut Component = matches.next().ok_or_else(|| {
+        return Error::NotFound(format!("expected an existing component named {name:?}"));
+    })?;
+    if matches.next().is_some() {
+        return Err(Error::Invalid(format!(
+            "expected one component named {name:?}, but found multiple"
+        )));
+    }
+    return Ok(component);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn component_input() -> CreateComponent {
+        return CreateComponent {
+            component_name: "Gateway".to_owned(),
+            component_type: "service".to_owned(),
+            description: "Example gateway".to_owned(),
+            purpose: "Filter requests".to_owned(),
+        };
+    }
+
+    fn control_input() -> MapControl {
+        return MapControl {
+            component_name: "Gateway".to_owned(),
+            control: "sc-7".to_owned(),
+        };
+    }
+
+    fn rule_input() -> MapRule {
+        return MapRule {
+            component_name: "Gateway".to_owned(),
+            scanner: "zap".to_owned(),
+            rule: "010038".to_owned(),
+            control: "sc-7".to_owned(),
+            justification: "Example justification".to_owned(),
+            expiry: "2028-02-29".to_owned(),
+        };
+    }
+
+    #[test]
+    fn create_component_rejects_empty_fields_and_duplicates() {
+        let mut components: Vec<Component> = Vec::new();
+        let mut input: CreateComponent = component_input();
+        input.component_name = " ".to_owned();
+        assert!(matches!(
+            create_component(&mut components, &input),
+            Err(Error::Invalid(_))
+        ));
+        assert!(components.is_empty());
+
+        let input: CreateComponent = component_input();
+        create_component(&mut components, &input).unwrap();
+        let original: Vec<Component> = components.clone();
+        assert!(matches!(
+            create_component(&mut components, &input),
+            Err(Error::AlreadyExists(_))
+        ));
+        assert_eq!(components, original);
+    }
+
+    #[test]
+    fn map_control_rejects_invalid_missing_and_duplicate_entries() {
+        let mut components: Vec<Component> = Vec::new();
+        let input: MapControl = control_input();
+        assert!(matches!(
+            map_control(&mut components, &input),
+            Err(Error::NotFound(_))
+        ));
+        create_component(&mut components, &component_input()).unwrap();
+
+        let empty: MapControl = MapControl {
+            control: " ".to_owned(),
+            ..control_input()
+        };
+        assert!(matches!(
+            map_control(&mut components, &empty),
+            Err(Error::Invalid(_))
+        ));
+        map_control(&mut components, &input).unwrap();
+        assert!(matches!(
+            map_control(&mut components, &input),
+            Err(Error::AlreadyExists(_))
+        ));
+        assert_eq!(components[0].controls, ["sc-7"]);
+    }
+
+    #[test]
+    fn map_rule_rejects_missing_component_and_control() {
+        let mut components: Vec<Component> = Vec::new();
+        let input: MapRule = rule_input();
+        assert!(matches!(
+            map_rule(&mut components, &input),
+            Err(Error::NotFound(_))
+        ));
+        create_component(&mut components, &component_input()).unwrap();
+        let original: Vec<Component> = components.clone();
+        assert!(matches!(
+            map_rule(&mut components, &input),
+            Err(Error::NotFound(_))
+        ));
+        assert_eq!(components, original);
+    }
+
+    #[test]
+    fn map_rule_rejects_invalid_inputs_and_normalized_duplicates() {
+        let mut components: Vec<Component> = Vec::new();
+        create_component(&mut components, &component_input()).unwrap();
+        map_control(&mut components, &control_input()).unwrap();
+        for input in [
+            MapRule {
+                scanner: "other".to_owned(),
+                ..rule_input()
+            },
+            MapRule {
+                rule: "10038a".to_owned(),
+                ..rule_input()
+            },
+            MapRule {
+                expiry: "2027-02-29".to_owned(),
+                ..rule_input()
+            },
+            MapRule {
+                expiry: "2028-2-29".to_owned(),
+                ..rule_input()
+            },
+            MapRule {
+                justification: " ".to_owned(),
+                ..rule_input()
+            },
+        ] {
+            assert!(matches!(
+                map_rule(&mut components, &input),
+                Err(Error::Invalid(_))
+            ));
+        }
+        assert!(components[0].rules.is_empty());
+        map_rule(&mut components, &rule_input()).unwrap();
+        let original: Vec<Component> = components.clone();
+        let duplicate: MapRule = MapRule {
+            scanner: "ZAP".to_owned(),
+            rule: "10038".to_owned(),
+            ..rule_input()
+        };
+        assert!(matches!(
+            map_rule(&mut components, &duplicate),
+            Err(Error::AlreadyExists(_))
+        ));
+        assert_eq!(components, original);
+        assert_eq!(components[0].rules[0].rules[0].id, "10038");
+    }
+}

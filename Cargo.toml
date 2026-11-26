@@ -12,6 +12,11 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 serde_yaml_ng = "0.10.0"
 tempfile = "3.27.0"
+thiserror = "2"
 unicode-width = "0.1"
 uuid = { version = "1.29.3", features = ["v4"] }
 walkdir = "2.5.1"
+
+[lints.clippy]
+# Finch uses explicit returns.
+needless_return = "allow"
