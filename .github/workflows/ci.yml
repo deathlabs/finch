@@ -10,17 +10,19 @@ permissions:
 
 jobs:
   lint:
-    name: Lint Check
+    name: Rust Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Install Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26.2'
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component clippy --component rustfmt
+      - name: Check formatting
+        run: cargo +stable fmt --check
+      - name: Run Clippy
+        run: cargo +stable clippy --locked --all-targets -- -D warnings -A clippy::needless_return
+      - name: Run tests
+        run: cargo +stable test --locked
 
   secrets:
     name: Secrets Scan

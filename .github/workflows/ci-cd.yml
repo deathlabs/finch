@@ -1,4 +1,4 @@
-name: Check & Release
+name: CI/CD
 
 on:
   push:
@@ -6,21 +6,23 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   lint:
-    name: Lint Check
+    name: Rust Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Install Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26.2'
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component clippy --component rustfmt
+      - name: Check formatting
+        run: cargo +stable fmt --check
+      - name: Run Clippy
+        run: cargo +stable clippy --locked --all-targets -- -D warnings -A clippy::needless_return
+      - name: Run tests
+        run: cargo +stable test --locked
 
   secrets:
     name: Secrets Scan
@@ -68,19 +70,19 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: [lint, secrets, sast, sca]
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Install Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26.2'
-      - name: Build Finch
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-gnu
+      - name: Build Finch for Linux
         run: |
-          CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -o dist/finch-linux-amd64       .
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o dist/finch-windows-amd64.exe .
+          cargo +stable build --release --locked --target x86_64-unknown-linux-gnu
+          install -D target/x86_64-unknown-linux-gnu/release/finch dist/finch-linux-amd64
       - name: Extract release notes
         id: release_notes
         uses: ffurrer2/extract-release-notes@v2

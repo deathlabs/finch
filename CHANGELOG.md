@@ -1,22 +1,15 @@
 # Changelog
 
-## [0.2.0]
+## [0.1.0] - 2026-11-25
 ### Added
-- Add `finch tui` to create component and scanner rule mappings in a terminal.
-- Select SSP controls from a scrollable list in `finch tui`.
-- Select ZAP rules from a list or enter additional rule IDs in `finch tui`.
-- Prompt to add another component after mapping rules in `finch tui`.
-- Start a new mapping workflow from the export confirmation screen in `finch tui`.
-- Return to the SSP path from the component title screen in `finch tui`.
-- Show workflow stages and the SSP and component count in `finch tui`.
-
-### Changed
-- Use Kaiju’s amethyst and grayscale palette for `finch tui` and show keyboard help in gray.
-- Add Tab completion for System Security Plan JSON files in `finch tui`.
-- Update the heading and component field labels and add default SSP path and component field values in `finch tui`.
-- Select the component type and security tool from lists in `finch tui`, and press Ctrl+D to finish rule mappings.
-- Update Bubble Tea from not installed to 1.3.10.
-
-## [0.1.0] - 2026-05-29
-### Added
-- Initial Go modules
+- Added Rust-based CLI scaffolding.
+- Add `--mode` with `cli`, `tui`, and `mcp` options. Use `cli` by default.
+- Print a mode message for CLI and MCP.
+- Use `--mode tui` to load an OSCAL [System Security Plan](GLOSSARY.md#system-security-plan), select [controls](GLOSSARY.md#control) and [scanner](GLOSSARY.md#scanner) rules for [components](GLOSSARY.md#component), and export a YAML [mappings file](GLOSSARY.md#mappings-file). The terminal interface uses `rusty-bubbletea` 2.0.8.
+- Use `--ssp PATH` to open a plan when the terminal interface starts.
+- Show a numbered part heading above each action. Start the step numbering at 1 within each part.
+- Use bold for part and step numbers and regular weight for their titles.
+- Update the [component](GLOSSARY.md#component) title, type, description, and purpose prompts.
+- Clarify the path prompts for the [SSP](GLOSSARY.md#system-security-plan) and the [mappings file](GLOSSARY.md#mappings-file).
+- End each step instruction with a period and the yes-or-no prompt with a question mark.
+- Update the selection prompts for [controls](GLOSSARY.md#control), [scanners](GLOSSARY.md#scanner), and ZAP rules.

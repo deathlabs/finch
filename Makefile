@@ -9,14 +9,13 @@ GRYPE_FAILURE_THRESHOLD ?= high
 VEX_FILE ?=
 
 # ---------------------------------------------------------
-# Build the artifact.
+# Build and install Finch.
 # ---------------------------------------------------------
 
 .PHONY: build
 .SILENT: build
-
-build: 
-	go install -ldflags="-s -w" . 
+build:
+	cargo install --path .
 
 # ---------------------------------------------------------
 # Update dependencies.
@@ -25,8 +24,7 @@ build:
 .PHONY: update
 .SILENT: update
 update:
-	go get -u ./...
-	go mod tidy
+	cargo update
 
 # ---------------------------------------------------------
 # Generate an SBOM for the artifact.
