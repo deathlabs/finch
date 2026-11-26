@@ -3,11 +3,13 @@ use std::fs::{self, File};
 use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 
+use chrono::NaiveDate;
 use serde::Serialize;
 use serde_yaml_ng::{Mapping, Value};
 use tempfile::NamedTempFile;
 use uuid::Uuid;
 
+const SCANNER_RULES: &str = "security_rules_mitigated_by_this_component";
 const CONTROLS: &str = "controls_implemented_by_this_component";
 
 #[derive(Serialize)]
@@ -52,7 +54,7 @@ pub(crate) fn create_component(path: &Path, title: &str) -> Result<(), Box<dyn E
 
 pub(crate) fn create_control_mapping(
     path: &Path,
-    component_uuid: Uuid,
+    component_name: &str,
     control_id: &str,
 ) -> Result<(), Box<dyn Error>> {
     let control_id: &str = control_id.trim();
@@ -61,34 +63,143 @@ pub(crate) fn create_control_mapping(
     }
 
     return update_components(path, |components| {
-        let component: &mut Mapping = components
-            .iter_mut()
-            .filter_map(Value::as_mapping_mut)
-            .find(|component| {
-                return component
-                    .get("uuid")
-                    .and_then(Value::as_str)
-                    .and_then(|uuid| Uuid::parse_str(uuid).ok())
-                    == Some(component_uuid);
-            })
-            .ok_or_else(|| format!("expected an existing component with UUID {component_uuid}"))?;
-        let controls: &mut Vec<Value> = component
-            .entry(Value::String(CONTROLS.to_owned()))
-            .or_insert_with(|| Value::Sequence(Vec::new()))
-            .as_sequence_mut()
-            .ok_or("expected a list of controls for the component")?;
+        let component: &mut Mapping = find_component(components, component_name)?;
+        let controls: &mut Vec<Value> = get_or_create_list(component, CONTROLS)?;
         if controls
             .iter()
             .any(|control| control.as_str() == Some(control_id))
         {
             return Err(format!(
-                "control {control_id:?} is already associated with {component_uuid}"
+                "control {control_id:?} is already associated with {component_name:?}"
             )
             .into());
         }
         controls.push(Value::String(control_id.to_owned()));
         return Ok(());
     });
+}
+
+#[derive(Serialize)]
+struct RuleMapping<'a> {
+    id: &'a str,
+    control: &'a str,
+    justification: &'a str,
+    expiry: &'a str,
+}
+
+pub(crate) fn create_rule_mapping(
+    path: &Path,
+    component_name: &str,
+    control: &str,
+    scanner: &str,
+    rule: &str,
+    justification: &str,
+    expiry: &str,
+) -> Result<(), Box<dyn Error>> {
+    let scanner: &str = scanner.trim();
+    let rule_mapping: RuleMapping<'_> = RuleMapping {
+        id: rule.trim(),
+        control: control.trim(),
+        justification: justification.trim(),
+        expiry,
+    };
+    if [
+        scanner,
+        rule_mapping.id,
+        rule_mapping.control,
+        rule_mapping.justification,
+    ]
+    .contains(&"")
+    {
+        return Err("expected a non-empty scanner, rule ID, control ID, and justification".into());
+    }
+    let expiry_date: NaiveDate = NaiveDate::parse_from_str(expiry, "%Y-%m-%d")
+        .map_err(|_| "expected a valid expiry date in YYYY-MM-DD format")?;
+    if expiry_date.format("%Y-%m-%d").to_string() != expiry || expiry.len() != 10 {
+        return Err("expected a valid expiry date in YYYY-MM-DD format".into());
+    }
+
+    return update_components(path, |components| {
+        let component: &mut Mapping = find_component(components, component_name)?;
+        let controls: &mut Vec<Value> = get_or_create_list(component, CONTROLS)?;
+        if !controls
+            .iter()
+            .any(|value| value.as_str() == Some(rule_mapping.control))
+        {
+            controls.push(Value::String(rule_mapping.control.to_owned()));
+        }
+
+        let scanners: &mut Vec<Value> = get_or_create_list(component, SCANNER_RULES)?;
+        let scanner_group: &mut Mapping = find_or_create_scanner(scanners, scanner);
+        let rules: &mut Vec<Value> = get_or_create_list(scanner_group, "rules")?;
+        if rules.iter().any(|rule| {
+            return rule.get("id").and_then(Value::as_str) == Some(rule_mapping.id)
+                && rule.get("control").and_then(Value::as_str) == Some(rule_mapping.control);
+        }) {
+            return Err(format!(
+                "expected a new mapping for scanner {scanner:?}, rule {:?}, and control {:?}",
+                rule_mapping.id, rule_mapping.control
+            )
+            .into());
+        }
+        rules.push(serde_yaml_ng::to_value(rule_mapping)?);
+        return Ok(());
+    });
+}
+
+fn find_or_create_scanner<'a>(scanners: &'a mut Vec<Value>, scanner: &str) -> &'a mut Mapping {
+    let group_index: usize = scanners
+        .iter()
+        .position(|group| {
+            return group
+                .get("tool")
+                .and_then(Value::as_str)
+                .is_some_and(|tool| tool.eq_ignore_ascii_case(scanner));
+        })
+        .unwrap_or_else(|| {
+            let mut group: Mapping = Mapping::new();
+            group.insert(Value::from("tool"), Value::from(scanner));
+            scanners.push(Value::Mapping(group));
+            return scanners.len() - 1;
+        });
+    return scanners[group_index]
+        .as_mapping_mut()
+        .expect("scanner group is a mapping");
+}
+
+fn find_component<'a>(
+    components: &'a mut [Value],
+    component_name: &str,
+) -> Result<&'a mut Mapping, Box<dyn Error>> {
+    let component_name: &str = component_name.trim();
+    if component_name.is_empty() {
+        return Err("expected a non-empty component name".into());
+    }
+
+    let mut matches = components
+        .iter_mut()
+        .filter_map(Value::as_mapping_mut)
+        .filter(|component| component.get("title").and_then(Value::as_str) == Some(component_name));
+    let component: &mut Mapping = matches
+        .next()
+        .ok_or_else(|| format!("expected an existing component named {component_name:?}"))?;
+    if matches.next().is_some() {
+        return Err(
+            format!("expected one component named {component_name:?}, but found multiple").into(),
+        );
+    }
+    return Ok(component);
+}
+
+fn get_or_create_list<'a>(
+    mapping: &'a mut Mapping,
+    key: &str,
+) -> Result<&'a mut Vec<Value>, Box<dyn Error>> {
+    return mapping
+        .entry(Value::from(key))
+        .or_insert_with(|| Value::Sequence(Vec::new()))
+        .as_sequence_mut()
+        .ok_or_else(|| format!("expected a list at {key}").into());
 }
 
 fn update_components(

@@ -6,7 +6,8 @@
 - Add `--mode` with `cli`, `tui`, and `mcp` options. Use `cli` by default.
 - Print a mode message for CLI and MCP.
 - Add `finch create component --component-name NAME` to add a [component](GLOSSARY.md#component) to an existing [mappings file](GLOSSARY.md#mappings-file).
-- Add `finch create mapping --component UUID --control ID` to associate a [control](GLOSSARY.md#control) with a [component](GLOSSARY.md#component).
+- Add `finch create mapping --component-name NAME --control ID` to associate a [control](GLOSSARY.md#control) with a [component](GLOSSARY.md#component).
+- Use `finch create mapping` to record a [scanner](GLOSSARY.md#scanner) rule, [control](GLOSSARY.md#control), [justification](GLOSSARY.md#justification), and [expiry](GLOSSARY.md#expiry) for a [component](GLOSSARY.md#component).
 - Use `--mode tui` to load an OSCAL [System Security Plan](GLOSSARY.md#system-security-plan), select [controls](GLOSSARY.md#control) and [scanner](GLOSSARY.md#scanner) rules for [components](GLOSSARY.md#component), and export a YAML [mappings file](GLOSSARY.md#mappings-file). The terminal interface uses `rusty-bubbletea` 2.0.8.
 - Use `--ssp PATH` to open a plan when the terminal interface starts.
 - Show a numbered part heading above each action. Start the step numbering at 1 within each part.

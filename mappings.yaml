@@ -16,3 +16,10 @@ components:
   - tool: ZAP
     rules:
     - '10020'
+- uuid: e63ae8f8-19b6-4584-8e89-63c2055dc4a2
+  title: NSG
+  type: ''
+  purpose: ''
+  controls_implemented_by_this_component:
+  - ac-10
+  security_rules_mitigated_by_this_component: []

@@ -72,7 +72,7 @@ This user flow assumes the security team has published the SSP and a mappings fi
 ```bash
 finch create mapping \
   --mappings-file mappings.yaml \
-  --component "$COMPONENT_UUID" \
+  --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID"
 ```
  
@@ -97,7 +97,7 @@ This user flow assumes the security team has published the SSP and a mappings fi
 ```bash
 finch create mapping \
   --mappings-file mappings.yaml \
-  --component "$COMPONENT_UUID" \
+  --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID" \
   --scanner "$SCANNER" \
   --rule "$RULE_ID" \

@@ -4,8 +4,7 @@ mod tui;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand, ValueEnum};
-use uuid::Uuid;
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Parser)]
 #[command(about = "Shape what your scanners can see.", version)]
@@ -43,15 +42,29 @@ enum CreateEntry {
         #[arg(long, value_name = "NAME")]
         component_name: String,
     },
-    /// Associate a control with an existing component.
+    /// Associate a control or scanner rule with an existing component.
     Mapping {
         #[arg(long, value_name = "PATH")]
         mappings_file: PathBuf,
-        #[arg(long, value_name = "UUID")]
-        component: Uuid,
+        #[arg(long, value_name = "NAME")]
+        component_name: String,
         #[arg(long, value_name = "ID")]
         control: String,
+        #[command(flatten)]
+        rule_mapping: RuleMappingArgs,
     },
+}
+
+#[derive(Args)]
+struct RuleMappingArgs {
+    #[arg(long, requires_all = ["rule", "justification", "expiry"])]
+    scanner: Option<String>,
+    #[arg(long, requires = "scanner")]
+    rule: Option<String>,
+    #[arg(long, requires = "scanner")]
+    justification: Option<String>,
+    #[arg(long, value_name = "YYYY-MM-DD", requires = "scanner")]
+    expiry: Option<String>,
 }
 
 #[derive(Clone, ValueEnum)]
@@ -78,10 +91,29 @@ pub fn run() -> ExitCode {
             }
             CreateEntry::Mapping {
                 mappings_file,
-                component,
+                component_name,
                 control,
+                rule_mapping,
             } => {
-                let result = mappings::create_control_mapping(&mappings_file, component, &control);
+                let result = match rule_mapping {
+                    RuleMappingArgs {
+                        scanner: Some(scanner),
+                        rule: Some(rule),
+                        justification: Some(justification),
+                        expiry: Some(expiry),
+                    } => mappings::create_rule_mapping(
+                        &mappings_file,
+                        &component_name,
+                        &control,
+                        &scanner,
+                        &rule,
+                        &justification,
+                        &expiry,
+                    ),
+                    _ => {
+                        mappings::create_control_mapping(&mappings_file, &component_name, &control)
+                    }
+                };
                 (mappings_file, result)
             }
         };
