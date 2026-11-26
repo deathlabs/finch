@@ -16,6 +16,8 @@
 - Clarify the path prompts for the [SSP](GLOSSARY.md#system-security-plan) and the [mappings file](GLOSSARY.md#mappings-file).
 - End each step instruction with a period and the yes-or-no prompt with a question mark.
 - Update the selection prompts for [controls](GLOSSARY.md#control), [scanners](GLOSSARY.md#scanner), and ZAP rules.
+- Add `finch schema` to print the JSON Schema for a [mappings file](GLOSSARY.md#mappings-file). The previous and planned Rust release versions are both 0.1.0.
+- Add date-based classification for [mappings](GLOSSARY.md#mapping). A [mapping](GLOSSARY.md#mapping) becomes Expired on the day after its [expiry](GLOSSARY.md#expiry).
 
 ### Changed
 

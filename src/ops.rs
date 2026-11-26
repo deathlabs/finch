@@ -6,6 +6,7 @@
 
 use chrono::NaiveDate;
 use clap::Args;
+use schemars::JsonSchema;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -13,41 +14,56 @@ use crate::catalog::Scanner;
 use crate::error::Error;
 use crate::model::{Component, RuleMapping, ScannerRules};
 
-#[derive(Args, Debug, Deserialize)]
+/// Input for adding a [component](GLOSSARY.md#component).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreateComponent {
+    /// Name of the new [component](GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
+    /// Type of the [component](GLOSSARY.md#component).
     #[arg(long = "type")]
     pub component_type: String,
+    /// Description of the [component](GLOSSARY.md#component).
     #[arg(long)]
     pub description: String,
+    /// Purpose of the [component](GLOSSARY.md#component).
     #[arg(long)]
     pub purpose: String,
 }
 
-#[derive(Args, Debug, Deserialize)]
+/// Input for associating an implemented [control](GLOSSARY.md#control) with a [component](GLOSSARY.md#component).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MapControl {
+    /// Name of the [component](GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
+    /// ID of the implemented [control](GLOSSARY.md#control).
     #[arg(long)]
     pub control: String,
 }
 
-#[derive(Args, Debug, Deserialize)]
+/// Input for adding a [mapping](GLOSSARY.md#mapping).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MapRule {
+    /// Name of the [component](GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
+    /// ID of the implemented [control](GLOSSARY.md#control) that supports this [mapping](GLOSSARY.md#mapping).
     #[arg(long)]
     pub control: String,
+    /// Name of the [scanner](GLOSSARY.md#scanner).
     #[arg(long)]
     pub scanner: String,
+    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
     #[arg(long)]
     pub rule: String,
+    /// [Justification](GLOSSARY.md#justification) for how the implemented [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the rule.
     #[arg(long)]
     pub justification: String,
+    /// [Expiry](GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](GLOSSARY.md#mapping) is valid.
     #[arg(long, value_name = "YYYY-MM-DD")]
     pub expiry: String,
 }
@@ -152,6 +168,25 @@ impl MapRule {
     }
 }
 
+/// Date-based state of a [mapping](GLOSSARY.md#mapping).
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExpiryState {
+    /// The supplied date is on or before the [expiry](GLOSSARY.md#expiry).
+    Valid,
+    /// The supplied date is after the [expiry](GLOSSARY.md#expiry).
+    Expired,
+}
+
+/// Classify a [mapping](GLOSSARY.md#mapping) by date for the
+/// [Mapping state machine](STATE_MACHINES.md#mapping).
+pub fn classify_expiry(rule: &RuleMapping, date: NaiveDate) -> Result<ExpiryState, Error> {
+    let expiry: NaiveDate = validate_expiry(&rule.expiry)?;
+    if expiry < date {
+        return Ok(ExpiryState::Expired);
+    }
+    return Ok(ExpiryState::Valid);
+}
+
 pub fn validate_expiry(expiry: &str) -> Result<NaiveDate, Error> {
     let expiry: &str = expiry.trim();
     let invalid = || Error::Invalid("expected a valid expiry date in YYYY-MM-DD format".to_owned());
@@ -238,14 +273,50 @@ mod tests {
     }
 
     #[test]
-    fn create_component_rejects_empty_fields_and_duplicates() {
-        let mut components: Vec<Component> = Vec::new();
-        let mut input: CreateComponent = component_input();
-        input.component_name = " ".to_owned();
+    fn expiry_is_inclusive() {
+        let (_, mut rule): (Scanner, RuleMapping) = rule_input().validated().unwrap();
+        for (day, expected) in [(28, ExpiryState::Valid), (29, ExpiryState::Valid)] {
+            let date: NaiveDate = NaiveDate::from_ymd_opt(2028, 2, day).unwrap();
+            assert_eq!(classify_expiry(&rule, date).unwrap(), expected);
+        }
+        let next_day: NaiveDate = NaiveDate::from_ymd_opt(2028, 3, 1).unwrap();
+        assert_eq!(
+            classify_expiry(&rule, next_day).unwrap(),
+            ExpiryState::Expired
+        );
+        rule.expiry = "2027-02-29".to_owned();
         assert!(matches!(
-            create_component(&mut components, &input),
+            classify_expiry(&rule, next_day),
             Err(Error::Invalid(_))
         ));
+    }
+
+    #[test]
+    fn create_component_rejects_empty_fields_and_duplicates() {
+        let mut components: Vec<Component> = Vec::new();
+        for input in [
+            CreateComponent {
+                component_name: " ".to_owned(),
+                ..component_input()
+            },
+            CreateComponent {
+                component_type: " ".to_owned(),
+                ..component_input()
+            },
+            CreateComponent {
+                description: " ".to_owned(),
+                ..component_input()
+            },
+            CreateComponent {
+                purpose: " ".to_owned(),
+                ..component_input()
+            },
+        ] {
+            assert!(matches!(
+                create_component(&mut components, &input),
+                Err(Error::Invalid(_))
+            ));
+        }
         assert!(components.is_empty());
 
         let input: CreateComponent = component_input();
@@ -282,6 +353,23 @@ mod tests {
             Err(Error::AlreadyExists(_))
         ));
         assert_eq!(components[0].controls, ["sc-7"]);
+    }
+
+    #[test]
+    fn mapping_operations_require_one_named_component() {
+        let mut components: Vec<Component> = Vec::new();
+        create_component(&mut components, &component_input()).unwrap();
+        components.push(components[0].clone());
+        let original: Vec<Component> = components.clone();
+        assert!(matches!(
+            map_control(&mut components, &control_input()),
+            Err(Error::Invalid(_))
+        ));
+        assert!(matches!(
+            map_rule(&mut components, &rule_input()),
+            Err(Error::Invalid(_))
+        ));
+        assert_eq!(components, original);
     }
 
     #[test]

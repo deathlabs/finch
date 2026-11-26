@@ -1,10 +1,11 @@
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
 use crate::ops::{self, CreateComponent, MapControl, MapRule};
-use crate::{store, tui};
+use crate::{schema, store, tui};
 
 #[derive(Parser)]
 #[command(about = "Shape what your scanners can see.", version)]
@@ -22,6 +23,8 @@ enum Command {
     },
     /// Run in MCP mode.
     Mcp,
+    /// Print the mappings file JSON Schema.
+    Schema,
     /// Add an entry to a mappings file.
     Create {
         #[arg(long, value_name = "PATH", default_value = "mappings.yaml")]
@@ -67,6 +70,18 @@ pub fn run() -> ExitCode {
         Command::Tui { ssp } => {
             if let Err(error) = tui::run(ssp) {
                 eprintln!("Failed to run the TUI: {error}");
+                return ExitCode::FAILURE;
+            }
+        }
+        Command::Schema => {
+            let result: io::Result<()> = (|| {
+                let mut output: io::StdoutLock<'_> = io::stdout().lock();
+                serde_json::to_writer_pretty(&mut output, &schema::mappings())?;
+                writeln!(output)?;
+                return Ok(());
+            })();
+            if let Err(error) = result {
+                eprintln!("Failed to write the mappings schema: {error}");
                 return ExitCode::FAILURE;
             }
         }
