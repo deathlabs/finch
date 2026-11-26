@@ -48,7 +48,7 @@ This user flow assumes the security team has published the hosting platform's Sy
 ```bash
 finch create component \
   --mappings-file mappings.yaml \
-  --component "$COMPONENT_NAME" 
+  --component-name "$COMPONENT_NAME"
 ```
 
 **Step 5.** The user proposes the change to the security team.

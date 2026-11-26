@@ -1,9 +1,11 @@
+mod mappings;
 mod tui;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
+use uuid::Uuid;
 
 #[derive(Parser)]
 #[command(about = "Shape what your scanners can see.", version)]
@@ -18,6 +20,38 @@ struct Cli {
         help = "Open an OSCAL System Security Plan in TUI mode"
     )]
     ssp: Option<PathBuf>,
+
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Add an entry to a mappings file.
+    Create {
+        #[command(subcommand)]
+        entry: CreateEntry,
+    },
+}
+
+#[derive(Subcommand)]
+enum CreateEntry {
+    /// Add a named component to an existing mappings file.
+    Component {
+        #[arg(long, value_name = "PATH")]
+        mappings_file: PathBuf,
+        #[arg(long, value_name = "NAME")]
+        component_name: String,
+    },
+    /// Associate a control with an existing component.
+    Mapping {
+        #[arg(long, value_name = "PATH")]
+        mappings_file: PathBuf,
+        #[arg(long, value_name = "UUID")]
+        component: Uuid,
+        #[arg(long, value_name = "ID")]
+        control: String,
+    },
 }
 
 #[derive(Clone, ValueEnum)]
@@ -29,6 +63,34 @@ enum Mode {
 
 pub fn run() -> ExitCode {
     let cli: Cli = Cli::parse();
+    if let Some(Command::Create { entry }) = cli.command {
+        if !matches!(cli.mode, Mode::Cli) || cli.ssp.is_some() {
+            eprintln!("Expected CLI mode without --ssp for create");
+            return ExitCode::FAILURE;
+        }
+        let (mappings_file, result) = match entry {
+            CreateEntry::Component {
+                mappings_file,
+                component_name,
+            } => {
+                let result = mappings::create_component(&mappings_file, &component_name);
+                (mappings_file, result)
+            }
+            CreateEntry::Mapping {
+                mappings_file,
+                component,
+                control,
+            } => {
+                let result = mappings::create_control_mapping(&mappings_file, component, &control);
+                (mappings_file, result)
+            }
+        };
+        if let Err(error) = result {
+            eprintln!("Failed to update {}: {error}", mappings_file.display());
+            return ExitCode::FAILURE;
+        }
+        return ExitCode::SUCCESS;
+    }
     match cli.mode {
         Mode::Cli => println!("CLI mode"),
         Mode::Tui => {

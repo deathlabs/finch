@@ -3,14 +3,15 @@ metadata:
   system_security_plan_title: CARAVAN SSP
   system_security_plan_version: 2026-05-20T00:34:48.6345506+00:00
   system_security_plan_last_modified: 2026-05-20T00:34:48.6344954+00:00
-  generated_at: 2026-11-26T02:53:04Z
+  generated_at: 2026-11-26T03:01:23Z
 components:
-- uuid: c4e379ba-8a05-402b-9761-ab59be311c7a
+- uuid: c1fa4af7-c3bf-4748-b88f-cf74569e1cac
   title: WAF
   type: software
   description: Web App Firewall
   purpose: Filter web traffic
-  controls_implemented_by_this_component: []
+  controls_implemented_by_this_component:
+  - ac-1
   security_rules_mitigated_by_this_component:
   - tool: ZAP
     rules:
