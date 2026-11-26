@@ -50,7 +50,7 @@ finch create component \
   --mappings-file mappings.yaml \
   --component "$COMPONENT_NAME" 
 ```
- 
+
 **Step 5.** The user proposes the change to the security team.
  
 **Step 6.** The security team reviews the proposal. They check that the component matches the entry in the SSP and applies to the environment in question.
