@@ -12,7 +12,7 @@ use crate::ops::{
     self, CreateComponent, DeleteComponent, DeleteControl, DeleteRule, GetComponent, GetControl,
     GetRule, MapControl, MapRule,
 };
-use crate::{schema, store, tui};
+use crate::{mcp, schema, store, tui};
 
 #[derive(Parser)]
 #[command(about = "Shape what your scanners can see.", version)]
@@ -56,8 +56,11 @@ enum StartInterface {
         #[arg(short, long, value_name = "PATH")]
         ssp: Option<PathBuf>,
     },
-    /// Start the MCP server
-    Mcp,
+    /// Start the MCP server over HTTP
+    Mcp {
+        #[arg(long, default_value_t = 8765)]
+        port: u16,
+    },
 }
 
 #[derive(Subcommand)]
@@ -158,7 +161,11 @@ pub fn run() -> ExitCode {
                         return ExitCode::FAILURE;
                     }
                 }
-                StartInterface::Mcp => println!("MCP mode"),
+                StartInterface::Mcp { port } => {
+                    if mcp::run(port).is_err() {
+                        return ExitCode::FAILURE;
+                    }
+                }
             }
             return ExitCode::SUCCESS;
         }

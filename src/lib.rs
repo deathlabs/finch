@@ -7,4 +7,5 @@ pub mod schema;
 pub mod ssp;
 pub mod store;
 
+mod mcp;
 mod tui;

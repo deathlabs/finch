@@ -4,7 +4,7 @@
 ### Added
 - Added Rust-based CLI scaffolding.
 - Add `--mode` with `cli`, `tui`, and `mcp` options. Use `cli` by default.
-- Print a mode message for CLI and MCP.
+- Print a mode message for CLI.
 - Add `finch create component --component-name NAME` to add a [component](GLOSSARY.md#component) to an existing [mappings file](GLOSSARY.md#mappings-file).
 - Add `finch create mapping --component-name NAME --control ID` to associate a [control](GLOSSARY.md#control) with a [component](GLOSSARY.md#component).
 - Use `finch create mapping` to record a [scanner](GLOSSARY.md#scanner) rule, [control](GLOSSARY.md#control), [justification](GLOSSARY.md#justification), and [expiry](GLOSSARY.md#expiry) for a [component](GLOSSARY.md#component).
@@ -24,6 +24,10 @@
 - Add `finch get control` and `finch get rule` to print the stored [control](GLOSSARY.md#control) ID or rule [mapping](GLOSSARY.md#mapping). Both support JSON and YAML. The previous and planned Rust release versions are both 0.1.0.
 
 ### Changed
+
+* Start the MCP server over Streamable HTTP with `finch start mcp`. The server provides the JSON Schema for a [mappings file](GLOSSARY.md#mappings-file). The previous and planned Rust release versions are both 0.1.0.
+* Write MCP server logs as JSON to standard error. Record every HTTP request and include the JSON-RPC payload when parsed. The previous and planned Rust release versions are both 0.1.0.
+
 
 * Breaking CLI change in the Rust 0.1.0 development series. The previous and planned release versions are both 0.1.0. Use `finch start tui`, `finch start mcp`, `finch add component`, `finch add control`, and `finch add rule`.
 * Breaking schema change. Each [scanner](GLOSSARY.md#scanner) rule requires an ID, an implemented [control](GLOSSARY.md#control), a [justification](GLOSSARY.md#justification), and an [expiry](GLOSSARY.md#expiry). Unknown keys cause errors.

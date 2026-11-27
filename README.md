@@ -8,6 +8,14 @@ Shape what your [scanners](GLOSSARY.md#scanner) can see.
 
 Finch gives [scanners](GLOSSARY.md#scanner) the [context](GLOSSARY.md#context) they need about your [hosting platform's](GLOSSARY.md#hosting-platform) security [controls](GLOSSARY.md#control) to identify and ignore false positives.
  
+## Start the MCP Server
+
+Run `finch start mcp` to start the Model Context Protocol (MCP) server.
+Set your client's Streamable HTTP URL to `http://127.0.0.1:8765/mcp`.
+To use a different port, run `finch start mcp --port 9000` and update the client URL.
+
+Use `finch://schema/mappings` to read the JSON Schema for a [mappings file](GLOSSARY.md#mappings-file).
+
 ## [User](GLOSSARY.md#user) Flows
  
 ### Creating a [Mappings File](GLOSSARY.md#mappings-file)
@@ -27,8 +35,6 @@ finch start tui --ssp ssp.json
 ```
 
 ![](docs/demo/tui.gif)
- 
-`finch start mcp` is reserved for the Model Context Protocol server.
  
 **Step 4.** The [security team](GLOSSARY.md#security-team) publishes their [mappings file](GLOSSARY.md#mappings-file).
  
