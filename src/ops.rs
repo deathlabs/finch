@@ -1,8 +1,14 @@
 //! Mutate an in-memory mappings document. File-backed callers should perform
 //! these operations inside [crate::store::update].
 //!
-//! All operations return [Error::AlreadyExists] for duplicates and leave the
-//! document unchanged on error.
+//! Add operations return [Error::AlreadyExists] for duplicates. Operations leave
+//! the document unchanged on error.
+
+mod delete;
+
+pub use delete::{
+    DeleteComponent, DeleteControl, DeleteRule, delete_component, delete_control, delete_rule,
+};
 
 use chrono::NaiveDate;
 use clap::Args;
@@ -13,6 +19,113 @@ use uuid::Uuid;
 use crate::catalog::Scanner;
 use crate::error::Error;
 use crate::model::{Component, RuleMapping, ScannerRules};
+
+/// Input for getting a [component](GLOSSARY.md#component).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GetComponent {
+    /// Name of the [component](GLOSSARY.md#component).
+    #[arg(long, help = "Name of the component")]
+    pub component_name: String,
+}
+
+/// Get the component with the specified name.
+pub fn get_component<'a>(
+    components: &'a [Component],
+    input: &GetComponent,
+) -> Result<&'a Component, Error> {
+    let index: usize = find_component_index(components, &input.component_name)?;
+    return Ok(&components[index]);
+}
+
+/// Input for getting an implemented [control](GLOSSARY.md#control).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GetControl {
+    /// Name of the [component](GLOSSARY.md#component).
+    #[arg(long, help = "Name of the component")]
+    pub component_name: String,
+    /// ID of the implemented [control](GLOSSARY.md#control).
+    #[arg(long, help = "ID of the implemented control")]
+    pub control: String,
+}
+
+/// Input for getting a [mapping](GLOSSARY.md#mapping).
+#[derive(Args, Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GetRule {
+    /// Name of the [component](GLOSSARY.md#component).
+    #[arg(long, help = "Name of the component")]
+    pub component_name: String,
+    /// ID of the implemented [control](GLOSSARY.md#control).
+    #[arg(long, help = "ID of the implemented control")]
+    pub control: String,
+    /// Name of the [scanner](GLOSSARY.md#scanner).
+    #[arg(long, help = "Name of the scanner")]
+    pub scanner: String,
+    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
+    #[arg(long, help = "ID of the scanner rule")]
+    pub rule: String,
+}
+
+/// Get the stored control ID from the named component.
+pub fn get_control<'a>(components: &'a [Component], input: &GetControl) -> Result<&'a str, Error> {
+    let control: &str = non_empty(&input.control, "control ID")?;
+    let index: usize = find_component_index(components, &input.component_name)?;
+    return find_control(&components[index], control);
+}
+
+/// Get a mapping by component, scanner, normalized rule ID, and control.
+pub fn get_rule<'a>(
+    components: &'a [Component],
+    input: &GetRule,
+) -> Result<&'a RuleMapping, Error> {
+    let index: usize = find_component_index(components, &input.component_name)?;
+    let component: &Component = &components[index];
+    let (group, rule): (usize, usize) =
+        find_rule_indices(component, &input.control, &input.scanner, &input.rule)?;
+    return Ok(&component.rules[group].rules[rule]);
+}
+
+fn find_rule_indices(
+    component: &Component,
+    control: &str,
+    scanner: &str,
+    rule: &str,
+) -> Result<(usize, usize), Error> {
+    let control: &str = non_empty(control, "control ID")?;
+    let scanner: Scanner = Scanner::find(scanner)?;
+    let id: String = scanner.normalize_rule(rule)?;
+    let mut matches: Option<(usize, usize)> = None;
+    for (group_index, group) in component.rules.iter().enumerate() {
+        if !scanner.name().eq_ignore_ascii_case(&group.tool) {
+            continue;
+        }
+        for (rule_index, rule) in group.rules.iter().enumerate() {
+            if rule.control != control
+                || !scanner
+                    .normalize_rule(&rule.id)
+                    .is_ok_and(|existing| existing == id)
+            {
+                continue;
+            }
+            if matches.replace((group_index, rule_index)).is_some() {
+                return Err(Error::Invalid(format!(
+                    "expected one {} rule {id:?} citing control {control:?} on {:?}, but found multiple",
+                    scanner.name(),
+                    component.title
+                )));
+            }
+        }
+    }
+    return matches.ok_or_else(|| {
+        return Error::NotFound(format!(
+            "expected an existing {} rule {id:?} citing control {control:?} on {:?}",
+            scanner.name(),
+            component.title
+        ));
+    });
+}
 
 /// Input for adding a [component](GLOSSARY.md#component).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
@@ -209,28 +322,39 @@ pub(crate) fn non_empty<'a>(value: &'a str, field: &str) -> Result<&'a str, Erro
 }
 
 pub(crate) fn require_control(component: &Component, control: &str) -> Result<(), Error> {
-    if !component
+    find_control(component, control)?;
+    return Ok(());
+}
+
+fn find_control<'a>(component: &'a Component, control: &str) -> Result<&'a str, Error> {
+    return component
         .controls
         .iter()
-        .any(|existing| existing == control)
-    {
-        return Err(Error::NotFound(format!(
-            "expected control {control:?} to be associated with {:?}",
-            component.title
-        )));
-    }
-    return Ok(());
+        .map(String::as_str)
+        .find(|existing| *existing == control)
+        .ok_or_else(|| {
+            Error::NotFound(format!(
+                "expected control {control:?} to be associated with {:?}",
+                component.title
+            ))
+        });
 }
 
 fn find_component<'a>(
     components: &'a mut [Component],
     name: &str,
 ) -> Result<&'a mut Component, Error> {
+    let index: usize = find_component_index(components, name)?;
+    return Ok(&mut components[index]);
+}
+
+fn find_component_index(components: &[Component], name: &str) -> Result<usize, Error> {
     let name: &str = non_empty(name, "component name")?;
     let mut matches = components
-        .iter_mut()
-        .filter(|component| component.title == name);
-    let component: &mut Component = matches.next().ok_or_else(|| {
+        .iter()
+        .enumerate()
+        .filter(|(_, component)| component.title == name);
+    let (index, _): (usize, &Component) = matches.next().ok_or_else(|| {
         return Error::NotFound(format!("expected an existing component named {name:?}"));
     })?;
     if matches.next().is_some() {
@@ -238,7 +362,7 @@ fn find_component<'a>(
             "expected one component named {name:?}, but found multiple"
         )));
     }
-    return Ok(component);
+    return Ok(index);
 }
 
 #[cfg(test)]

@@ -10,7 +10,7 @@ use serde_json::Value;
 #[test]
 fn committed_schema_matches_cli_output() {
     let output: Output = Command::new(env!("CARGO_BIN_EXE_finch"))
-        .arg("schema")
+        .args(["get", "schema"])
         .output()
         .unwrap();
     assert!(
@@ -21,7 +21,7 @@ fn committed_schema_matches_cli_output() {
     assert_eq!(
         std::str::from_utf8(&output.stdout).unwrap(),
         include_str!("../schema/mappings.schema.json"),
-        "Update the committed schema with: cargo run --quiet -- schema > schema/mappings.schema.json"
+        "Update the committed schema with: cargo run --quiet -- get schema > schema/mappings.schema.json"
     );
 }
 

@@ -23,12 +23,12 @@ This [user](GLOSSARY.md#user) flow is focused on the [security team](GLOSSARY.md
 **Open the Terminal Interface**
 
 ```bash
-finch tui --ssp ssp.json
+finch start tui --ssp ssp.json
 ```
 
 ![](docs/demo/tui.gif)
  
-`finch mcp` is reserved for the Model Context Protocol server.
+`finch start mcp` is reserved for the Model Context Protocol server.
  
 **Step 4.** The [security team](GLOSSARY.md#security-team) publishes their [mappings file](GLOSSARY.md#mappings-file).
  
@@ -45,7 +45,7 @@ This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#secur
 **Step 4.** The [user](GLOSSARY.md#user) adds the [component](GLOSSARY.md#component) to their local copy of the [mappings file](GLOSSARY.md#mappings-file).
  
 ```bash
-finch create --mappings-file mappings.yaml component \
+finch add --mappings-file mappings.yaml component \
   --component-name "$COMPONENT_NAME" \
   --type service \
   --description "$DESCRIPTION" \
@@ -71,7 +71,7 @@ This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#secur
 **Step 4.** The [user](GLOSSARY.md#user) runs `finch` to associate the [control](GLOSSARY.md#control) with the [component](GLOSSARY.md#component) in their local copy of the [mappings file](GLOSSARY.md#mappings-file).
  
 ```bash
-finch create --mappings-file mappings.yaml control \
+finch add --mappings-file mappings.yaml control \
   --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID"
 ```
@@ -95,7 +95,7 @@ This [user](GLOSSARY.md#user) flow assumes the [security team](GLOSSARY.md#secur
 **Step 4.** The [user](GLOSSARY.md#user) runs `finch` to add the rule to their local copy of the [mappings file](GLOSSARY.md#mappings-file). The [component](GLOSSARY.md#component) must already list the [control](GLOSSARY.md#control).
  
 ```bash
-finch create --mappings-file mappings.yaml rule \
+finch add --mappings-file mappings.yaml rule \
   --component-name "$COMPONENT_NAME" \
   --control "$CONTROL_ID" \
   --scanner "$SCANNER" \
@@ -110,11 +110,37 @@ finch create --mappings-file mappings.yaml rule \
  
 **Step 7.** If the [security team](GLOSSARY.md#security-team) approves the proposal, they publish a new [mappings file version](GLOSSARY.md#mappings-file-version).
  
+### Viewing Entries
+
+Print a [component](GLOSSARY.md#component) in JSON, including its implemented [controls](GLOSSARY.md#control) and rule [mappings](GLOSSARY.md#mapping).
+
+```bash
+finch get component --component-name "$COMPONENT_NAME"
+finch get control --component-name "$COMPONENT_NAME" --control "$CONTROL_ID"
+finch get rule --component-name "$COMPONENT_NAME" --control "$CONTROL_ID" --scanner "$SCANNER" --rule "$RULE_ID"
+```
+
+The [control](GLOSSARY.md#control) lookup prints the stored ID. The rule lookup prints the [mapping](GLOSSARY.md#mapping) for the specified [scanner](GLOSSARY.md#scanner) and [control](GLOSSARY.md#control).
+
+Use `-o yaml` or `--output-format yaml` to print YAML. Use `--mappings-file PATH` to read a [mappings file](GLOSSARY.md#mappings-file) other than `mappings.yaml`.
+
+### Deleting Entries
+
+A [component](GLOSSARY.md#component) with implemented [controls](GLOSSARY.md#control) cannot be deleted unless you pass `-f`. A [control](GLOSSARY.md#control) with dependent [mappings](GLOSSARY.md#mapping) also requires `-f`. Finch lists the dependents when it rejects a deletion.
+
+With `-f`, deleting a [component](GLOSSARY.md#component) also removes its [controls](GLOSSARY.md#control) and [mappings](GLOSSARY.md#mapping). Deleting a [control](GLOSSARY.md#control) with `-f` removes the [mappings](GLOSSARY.md#mapping) that cite it on that [component](GLOSSARY.md#component).
+
+```bash
+finch delete component --component-name "$COMPONENT_NAME" -f
+finch delete control --component-name "$COMPONENT_NAME" --control "$CONTROL_ID" -f
+finch delete rule --component-name "$COMPONENT_NAME" --control "$CONTROL_ID" --scanner "$SCANNER" --rule "$RULE_ID"
+```
+
 ### [Mappings File](GLOSSARY.md#mappings-file) Schema
 
 Every rule entry is an object. Include an `id`, [`control`](GLOSSARY.md#control), [`justification`](GLOSSARY.md#justification), and [`expiry`](GLOSSARY.md#expiry) for each rule. Finch rejects unrecognized keys. See [the example](mappings.yaml).
 
-The `create` commands report an error if the entry already exists. The `--mappings-file` option defaults to `mappings.yaml`.
+The `add` command reports an error if the entry already exists. The `--mappings-file` option defaults to `mappings.yaml`.
 
 ### Generating a New [Suppression](GLOSSARY.md#suppression)
 

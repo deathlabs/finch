@@ -2,7 +2,7 @@
 
 The Rust model generates the [JSON Schema](schema/mappings.schema.json) for the [mappings file](GLOSSARY.md#mappings-file). [GLOSSARY.md](GLOSSARY.md) defines the terms. [STATE_MACHINES.md](STATE_MACHINES.md) describes the target lifecycles.
 
-Run `cargo run --quiet -- schema > schema/mappings.schema.json` from the repository root to regenerate the schema.
+Run `cargo run --quiet -- get schema > schema/mappings.schema.json` from the repository root to regenerate the schema.
 
 ## Rules the schema cannot express
 
@@ -17,6 +17,7 @@ These rules are enforced by the functions below. Loading a [mappings file](GLOSS
 | R5 | A new [mapping](GLOSSARY.md#mapping) must cite an implemented [control](GLOSSARY.md#control) already listed by its [component](GLOSSARY.md#component). The same [scanner](GLOSSARY.md#scanner), normalized rule ID, and [control](GLOSSARY.md#control) cannot be added twice to the same [component](GLOSSARY.md#component). | `ops::map_rule`, `ops::require_control` | `map_rule_rejects_missing_component_and_control`, `map_rule_rejects_invalid_inputs_and_normalized_duplicates` |
 | R6 | The [expiry](GLOSSARY.md#expiry) of a new [mapping](GLOSSARY.md#mapping) must be a real calendar date in YYYY-MM-DD format. | `ops::validate_expiry` | `map_rule_rejects_invalid_inputs_and_normalized_duplicates`, `expiry_is_inclusive` |
 | R7 | A [mapping](GLOSSARY.md#mapping) is Expired only when the supplied date is later than its [expiry](GLOSSARY.md#expiry). | `ops::classify_expiry` | `expiry_is_inclusive` |
+| R8 | Deleting a [component](GLOSSARY.md#component) or [control](GLOSSARY.md#control) with dependents requires explicit force. A forced deletion also removes the dependent [controls](GLOSSARY.md#control) and [mappings](GLOSSARY.md#mapping) for the selected [component](GLOSSARY.md#component) or [control](GLOSSARY.md#control). | `ops::delete_component`, `ops::delete_control` | `cli_delete_checks_dependencies_and_force_limits_the_cascade` |
 
 ## Proposed rules
 

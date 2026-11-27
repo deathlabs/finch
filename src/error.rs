@@ -7,6 +7,8 @@ pub enum Error {
     #[error("{0}")]
     AlreadyExists(String),
     #[error("{0}")]
+    HasDependents(String),
+    #[error("{0}")]
     Invalid(String),
     #[error(transparent)]
     Io(#[from] io::Error),

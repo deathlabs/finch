@@ -1,3 +1,5 @@
+# Glossary
+
 ## Component
 
 An OSCAL-based representation of a [hosting platform](GLOSSARY.md) element and the implemented [controls](GLOSSARY.md) it supports, as documented in the [hosting platform’s](GLOSSARY.md) [system security plan](GLOSSARY.md). For example, a Web Application Firewall is a [component](GLOSSARY.md) that can support implemented [controls](GLOSSARY.md) from the System and Communications Protection (SC) family.

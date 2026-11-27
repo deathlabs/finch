@@ -9,7 +9,7 @@ Set Width 1400
 Set Height 800
 Set TypingSpeed 30ms
 
-Type "finch tui --ssp docs/demo/tui-ssp.json"
+Type "finch start tui --ssp docs/demo/tui-ssp.json"
 Enter
 Sleep 2s
 Enter
