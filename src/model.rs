@@ -4,68 +4,68 @@ use serde::{Deserialize, Serialize};
 
 use crate::ssp::Plan;
 
-/// An OSCAL-based representation of a [hosting platform](GLOSSARY.md#hosting-platform) element and the implemented [controls](GLOSSARY.md#control) it supports.
+/// An OSCAL-based representation of a [hosting platform](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#hosting-platform) element and the implemented [controls](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) it supports.
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Component {
-    /// Unique ID for the [component](GLOSSARY.md#component).
+    /// Unique ID for the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     pub uuid: String,
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     pub title: String,
-    /// Type of the [component](GLOSSARY.md#component).
+    /// Type of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[serde(rename = "type")]
     pub component_type: String,
-    /// Description of the [component](GLOSSARY.md#component).
+    /// Description of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
-    /// Purpose of the [component](GLOSSARY.md#component).
+    /// Purpose of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     pub purpose: String,
-    /// IDs of [controls](GLOSSARY.md#control) implemented by the [component](GLOSSARY.md#component).
+    /// IDs of [controls](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) implemented by the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[serde(rename = "controls_implemented_by_this_component")]
     pub controls: Vec<String>,
-    /// Groups of [mappings](GLOSSARY.md#mapping) by [scanner](GLOSSARY.md#scanner).
+    /// Groups of [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) by [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     #[serde(rename = "security_rules_mitigated_by_this_component")]
     pub rules: Vec<ScannerRules>,
 }
 
-/// [Mappings](GLOSSARY.md#mapping) for rules from one [scanner](GLOSSARY.md#scanner).
+/// [Mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) for rules from one [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ScannerRules {
-    /// Name of the [scanner](GLOSSARY.md#scanner).
+    /// Name of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     pub tool: String,
-    /// [Mappings](GLOSSARY.md#mapping) for this [scanner](GLOSSARY.md#scanner).
+    /// [Mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) for this [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     pub rules: Vec<RuleMapping>,
 }
 
-/// A [mappings file](GLOSSARY.md#mappings-file) records [mappings](GLOSSARY.md#mapping).
+/// A [mappings file](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mappings-file) records [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MappingsFile {
-    /// Details about the source [system security plan](GLOSSARY.md#system-security-plan) and file generation.
+    /// Details about the source [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) and file generation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<MappingsMetadata>,
-    /// [Components](GLOSSARY.md#component) recorded in the file.
+    /// [Components](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component) recorded in the file.
     pub components: Vec<Component>,
 }
 
-/// Details about the source [system security plan](GLOSSARY.md#system-security-plan) and file generation.
+/// Details about the source [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) and file generation.
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MappingsMetadata {
-    /// Unique ID of the [system security plan](GLOSSARY.md#system-security-plan).
+    /// Unique ID of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub system_security_plan_uuid: String,
-    /// Title of the [system security plan](GLOSSARY.md#system-security-plan).
+    /// Title of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub system_security_plan_title: String,
-    /// Version of the [system security plan](GLOSSARY.md#system-security-plan).
+    /// Version of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub system_security_plan_version: String,
-    /// When the [system security plan](GLOSSARY.md#system-security-plan) was last modified.
+    /// When the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) was last modified.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub system_security_plan_last_modified: String,
-    /// When Finch generated the [mappings file](GLOSSARY.md#mappings-file).
+    /// When Finch generated the [mappings file](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mappings-file).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub generated_at: String,
 }
@@ -85,17 +85,17 @@ impl MappingsFile {
     }
 }
 
-/// A [mapping](GLOSSARY.md#mapping) relates a [scanner](GLOSSARY.md#scanner) rule, a [component](GLOSSARY.md#component), and an implemented [control](GLOSSARY.md#control).
+/// A [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) relates a [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule, a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component), and an implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct RuleMapping {
-    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
+    /// ID of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.
     pub id: String,
-    /// ID of the implemented [control](GLOSSARY.md#control) that supports this [mapping](GLOSSARY.md#mapping).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) that supports this [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
     pub control: String,
-    /// [Justification](GLOSSARY.md#justification) for how the implemented [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.
+    /// [Justification](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#justification) for how the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) mitigates the [risk](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#risk) associated with the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.
     pub justification: String,
-    /// [Expiry](GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](GLOSSARY.md#mapping) is valid.
+    /// [Expiry](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) is valid.
     pub expiry: String,
 }
 

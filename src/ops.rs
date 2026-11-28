@@ -20,11 +20,11 @@ use crate::catalog::Scanner;
 use crate::error::Error;
 use crate::model::{Component, RuleMapping, ScannerRules};
 
-/// Input for getting a [component](GLOSSARY.md#component).
+/// Input for getting a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct GetComponent {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
 }
@@ -38,32 +38,32 @@ pub fn get_component<'a>(
     return Ok(&components[index]);
 }
 
-/// Input for getting an implemented [control](GLOSSARY.md#control).
+/// Input for getting an implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct GetControl {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
     #[arg(long, help = "ID of the implemented control")]
     pub control: String,
 }
 
-/// Input for getting a [mapping](GLOSSARY.md#mapping).
+/// Input for getting a [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct GetRule {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
     #[arg(long, help = "ID of the implemented control")]
     pub control: String,
-    /// Name of the [scanner](GLOSSARY.md#scanner).
+    /// Name of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     #[arg(long, help = "Name of the scanner")]
     pub scanner: String,
-    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
+    /// ID of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.
     #[arg(long, help = "ID of the scanner rule")]
     pub rule: String,
 }
@@ -127,56 +127,56 @@ fn find_rule_indices(
     });
 }
 
-/// Input for adding a [component](GLOSSARY.md#component).
+/// Input for adding a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreateComponent {
-    /// Name of the new [component](GLOSSARY.md#component).
+    /// Name of the new [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
-    /// Type of the [component](GLOSSARY.md#component).
+    /// Type of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long = "type")]
     pub component_type: String,
-    /// Description of the [component](GLOSSARY.md#component).
+    /// Description of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long)]
     pub description: String,
-    /// Purpose of the [component](GLOSSARY.md#component).
+    /// Purpose of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long)]
     pub purpose: String,
 }
 
-/// Input for associating an implemented [control](GLOSSARY.md#control) with a [component](GLOSSARY.md#component).
+/// Input for associating an implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) with a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MapControl {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
     #[arg(long)]
     pub control: String,
 }
 
-/// Input for adding a [mapping](GLOSSARY.md#mapping).
+/// Input for adding a [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MapRule {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long)]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control) that supports this [mapping](GLOSSARY.md#mapping).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) that supports this [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
     #[arg(long)]
     pub control: String,
-    /// Name of the [scanner](GLOSSARY.md#scanner).
+    /// Name of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     #[arg(long)]
     pub scanner: String,
-    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
+    /// ID of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.
     #[arg(long)]
     pub rule: String,
-    /// [Justification](GLOSSARY.md#justification) for how the implemented [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the rule.
+    /// [Justification](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#justification) for how the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) mitigates the [risk](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#risk) associated with the rule.
     #[arg(long)]
     pub justification: String,
-    /// [Expiry](GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](GLOSSARY.md#mapping) is valid.
+    /// [Expiry](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) is valid.
     #[arg(long, value_name = "YYYY-MM-DD")]
     pub expiry: String,
 }
@@ -204,6 +204,59 @@ pub fn create_component(
         controls: Vec::new(),
         rules: Vec::new(),
     });
+    return Ok(());
+}
+
+/// Fields to change on an existing component.
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct UpdateComponent {
+    /// Current component name.
+    pub component_name: String,
+    pub new_name: Option<String>,
+    pub component_type: Option<String>,
+    pub description: Option<String>,
+    pub purpose: Option<String>,
+}
+
+/// Update component fields while preserving its identity and associations.
+pub fn update_component(
+    components: &mut [Component],
+    input: &UpdateComponent,
+) -> Result<(), Error> {
+    let index: usize = find_component_index(components, &input.component_name)?;
+    if input.new_name.is_none()
+        && input.component_type.is_none()
+        && input.description.is_none()
+        && input.purpose.is_none()
+    {
+        return Err(Error::Invalid(
+            "expected at least one component field to update".into(),
+        ));
+    }
+
+    let mut component: Component = components[index].clone();
+    if let Some(name) = &input.new_name {
+        let title: &str = non_empty(name, "new component name")?;
+        if components.iter().enumerate().any(|(other, component)| {
+            return other != index && component.title == title;
+        }) {
+            return Err(Error::AlreadyExists(format!(
+                "expected a unique component name, but {title:?} already exists"
+            )));
+        }
+        component.title = title.to_owned();
+    }
+    if let Some(component_type) = &input.component_type {
+        component.component_type = non_empty(component_type, "component type")?.to_owned();
+    }
+    if let Some(description) = &input.description {
+        component.description = non_empty(description, "description")?.to_owned();
+    }
+    if let Some(purpose) = &input.purpose {
+        component.purpose = non_empty(purpose, "purpose")?.to_owned();
+    }
+    components[index] = component;
     return Ok(());
 }
 
@@ -281,16 +334,16 @@ impl MapRule {
     }
 }
 
-/// Date-based state of a [mapping](GLOSSARY.md#mapping).
+/// Date-based state of a [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExpiryState {
-    /// The supplied date is on or before the [expiry](GLOSSARY.md#expiry).
+    /// The supplied date is on or before the [expiry](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#expiry).
     Valid,
-    /// The supplied date is after the [expiry](GLOSSARY.md#expiry).
+    /// The supplied date is after the [expiry](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#expiry).
     Expired,
 }
 
-/// Classify a [mapping](GLOSSARY.md#mapping) by date for the
+/// Classify a [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) by date for the
 /// [Mapping state machine](STATE_MACHINES.md#mapping).
 pub fn classify_expiry(rule: &RuleMapping, date: NaiveDate) -> Result<ExpiryState, Error> {
     let expiry: NaiveDate = validate_expiry(&rule.expiry)?;

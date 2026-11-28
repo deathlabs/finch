@@ -66,7 +66,7 @@ fn checked_in_yaml_conforms_to_json_schema() {
     let root: &Path = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut paths: Vec<PathBuf> = vec![
         root.join("mappings.yaml"),
-        root.join("docs/demo/mappings.yaml"),
+        root.join("docs/src/demos/generate/mappings.yaml"),
     ];
     paths.extend(
         fs::read_dir(root.join("examples"))

@@ -8,3 +8,6 @@ eMASS_Values.json
 *scan.json
 finch-out/
 ssp.json
+
+/docs/src/.venv/
+/docs/src/public/

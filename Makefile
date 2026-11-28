@@ -6,7 +6,6 @@
 SBOM_FILE ?= sbom.json
 SCAN_FILE ?= scan.json
 GRYPE_FAILURE_THRESHOLD ?= high
-VEX_FILE ?=
 
 # ---------------------------------------------------------
 # Build and install Finch.
@@ -42,8 +41,16 @@ sbom:
 .PHONY: scan
 .SILENT: scan
 scan: sbom
-	if [ -n "$(VEX_FILE)" ]; then \
-		grype "sbom:$(SBOM_FILE)" --vex "$(VEX_FILE)" --fail-on "$(GRYPE_FAILURE_THRESHOLD)" -o table -o "cyclonedx-json=$(SCAN_FILE)"; \
-	else \
-		grype "sbom:$(SBOM_FILE)" --fail-on "$(GRYPE_FAILURE_THRESHOLD)" -o table -o "cyclonedx-json=$(SCAN_FILE)"; \
-	fi
+	grype "sbom:$(SBOM_FILE)" \
+		--fail-on "$(GRYPE_FAILURE_THRESHOLD)" \
+		-o table \
+		-o "cyclonedx-json=$(SCAN_FILE)"
+
+# ---------------------------------------------------------
+# Serve the docs locally.
+# ---------------------------------------------------------
+
+.PHONY: docs
+.SILENT: docs
+docs:
+	./scripts/docs.sh

@@ -1,5 +1,6 @@
 use std::io::Read;
 use std::net::Ipv4Addr;
+use std::path::Path;
 
 use chrono::{SecondsFormat, Utc};
 use serde_json::{Value, json};
@@ -7,13 +8,18 @@ use tiny_http::{Header, Method, Request, Response, ResponseBox, Server};
 
 use crate::schema;
 
+mod tools;
+
 const PROTOCOL_VERSION: &str = "2025-11-25";
 const SCHEMA_URI: &str = "finch://schema/mappings";
 const SCHEMA_MIME_TYPE: &str = "application/schema+json";
 
 const MAX_BODY_BYTES: u64 = 64 * 1024;
 
-pub(crate) fn run(port: u16) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub(crate) fn run(
+    port: u16,
+    mappings_file: &Path,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let server: Server = Server::http((Ipv4Addr::LOCALHOST, port)).inspect_err(|error| {
         log(json!({
             "level": "error",
@@ -35,7 +41,8 @@ pub(crate) fn run(port: u16) -> Result<(), Box<dyn std::error::Error + Send + Sy
             "http_method": request.method().as_str(),
             "url": request.url(),
         });
-        let response: ResponseBox = build_response(&mut request, address.port(), &mut record);
+        let response: ResponseBox =
+            build_response(&mut request, address.port(), mappings_file, &mut record);
         record["http_status"] = json!(response.status_code().0);
         if let Err(error) = request.respond(response) {
             record["level"] = json!("error");
@@ -52,7 +59,12 @@ fn log(mut record: Value) {
     return;
 }
 
-fn build_response(request: &mut Request, port: u16, record: &mut Value) -> ResponseBox {
+fn build_response(
+    request: &mut Request,
+    port: u16,
+    mappings_file: &Path,
+    record: &mut Value,
+) -> ResponseBox {
     let loopback_host: String = format!("127.0.0.1:{port}");
     let localhost_host: String = format!("localhost:{port}");
     let loopback_origin: String = format!("http://{loopback_host}");
@@ -106,7 +118,13 @@ fn build_response(request: &mut Request, port: u16, record: &mut Value) -> Respo
     }
     let response: Option<Value> = match serde_json::from_slice(&body) {
         Ok(message) => {
-            let response: Option<Value> = handle(&message);
+            let response: Option<Value> = handle(&message, mappings_file);
+            let mut message: Value = message;
+            if message["method"] == "tools/call" {
+                if let Some(params) = message.get_mut("params").and_then(Value::as_object_mut) {
+                    params.remove("arguments");
+                }
+            }
             record["request"] = message;
             response
         }
@@ -131,7 +149,7 @@ fn is_supported_version(version: &str) -> bool {
     return matches!(version, PROTOCOL_VERSION | "2025-06-18" | "2025-03-26");
 }
 
-fn handle(message: &Value) -> Option<Value> {
+fn handle(message: &Value, mappings_file: &Path) -> Option<Value> {
     let id: Option<&Value> = message.get("id");
     let method: Option<&str> = message.get("method").and_then(Value::as_str);
     let params: &Value = &message["params"];
@@ -175,11 +193,16 @@ fn handle(message: &Value) -> Option<Value> {
             };
             json!({
                 "protocolVersion": version,
-                "capabilities": {"resources": {}},
+                "capabilities": {"resources": {}, "tools": {}},
                 "serverInfo": {"name": "finch", "version": env!("CARGO_PKG_VERSION")}
             })
         }
         Some("ping") => json!({}),
+        Some("tools/list") => tools::list(),
+        Some("tools/call") => match tools::call(params, mappings_file) {
+            Ok(result) => result,
+            Err(message) => return Some(error(id, -32602, &message)),
+        },
         Some("resources/list") => json!({
             "resources": [{
                 "uri": SCHEMA_URI,

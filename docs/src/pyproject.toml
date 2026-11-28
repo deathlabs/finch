@@ -1,0 +1,11 @@
+[project]
+name = "finch-docs"
+version = "0.1.0"
+description = "Finch documentation site"
+requires-python = ">=3.11"
+dependencies = [
+  "zensical==0.0.68",
+]
+
+[tool.uv]
+package = false

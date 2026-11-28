@@ -60,6 +60,8 @@ enum StartInterface {
     Mcp {
         #[arg(long, default_value_t = 8765)]
         port: u16,
+        #[arg(long, value_name = "PATH", default_value = "mappings.yaml")]
+        mappings_file: PathBuf,
     },
 }
 
@@ -161,8 +163,11 @@ pub fn run() -> ExitCode {
                         return ExitCode::FAILURE;
                     }
                 }
-                StartInterface::Mcp { port } => {
-                    if mcp::run(port).is_err() {
+                StartInterface::Mcp {
+                    port,
+                    mappings_file,
+                } => {
+                    if mcp::run(port, &mappings_file).is_err() {
                         return ExitCode::FAILURE;
                     }
                 }

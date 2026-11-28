@@ -10,7 +10,7 @@ fn loads_checked_in_mappings() {
     let root: &Path = Path::new(env!("CARGO_MANIFEST_DIR"));
     for path in [
         "mappings.yaml",
-        "docs/demo/mappings.yaml",
+        "docs/src/demos/generate/mappings.yaml",
         "examples/platform-a-mappings.yaml",
         "examples/platform-b-mappings.yaml",
         "examples/platform-c-mappings.yaml",

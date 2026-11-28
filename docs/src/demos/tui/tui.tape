@@ -1,6 +1,6 @@
 # Run from the repository root with Finch, VHS, ttyd, ffmpeg, and Chrome installed.
 # The SSP and mappings in this demo are fictional.
-Output docs/demo/tui.gif
+Output docs/src/content/user-guide/assets/tui.gif
 
 Set Shell "bash"
 Set Theme "Dracula"
@@ -9,7 +9,7 @@ Set Width 1400
 Set Height 800
 Set TypingSpeed 30ms
 
-Type "finch start tui --ssp docs/demo/tui-ssp.json"
+Type "finch start tui --ssp docs/src/demos/tui/tui-ssp.json"
 Enter
 Sleep 2s
 Enter

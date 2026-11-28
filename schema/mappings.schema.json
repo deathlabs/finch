@@ -1,18 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "MappingsFile",
-  "description": "A [mappings file](GLOSSARY.md#mappings-file) records [mappings](GLOSSARY.md#mapping).",
+  "description": "A [mappings file](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mappings-file) records [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).",
   "type": "object",
   "properties": {
     "components": {
-      "description": "[Components](GLOSSARY.md#component) recorded in the file.",
+      "description": "[Components](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component) recorded in the file.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/Component"
       }
     },
     "metadata": {
-      "description": "Details about the source [system security plan](GLOSSARY.md#system-security-plan) and file generation.",
+      "description": "Details about the source [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) and file generation.",
       "anyOf": [
         {
           "$ref": "#/$defs/MappingsMetadata"
@@ -29,41 +29,41 @@
   ],
   "$defs": {
     "Component": {
-      "description": "An OSCAL-based representation of a [hosting platform](GLOSSARY.md#hosting-platform) element and the implemented [controls](GLOSSARY.md#control) it supports.",
+      "description": "An OSCAL-based representation of a [hosting platform](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#hosting-platform) element and the implemented [controls](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) it supports.",
       "type": "object",
       "properties": {
         "controls_implemented_by_this_component": {
-          "description": "IDs of [controls](GLOSSARY.md#control) implemented by the [component](GLOSSARY.md#component).",
+          "description": "IDs of [controls](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) implemented by the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
         "description": {
-          "description": "Description of the [component](GLOSSARY.md#component).",
+          "description": "Description of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "string"
         },
         "purpose": {
-          "description": "Purpose of the [component](GLOSSARY.md#component).",
+          "description": "Purpose of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "string"
         },
         "security_rules_mitigated_by_this_component": {
-          "description": "Groups of [mappings](GLOSSARY.md#mapping) by [scanner](GLOSSARY.md#scanner).",
+          "description": "Groups of [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) by [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).",
           "type": "array",
           "items": {
             "$ref": "#/$defs/ScannerRules"
           }
         },
         "title": {
-          "description": "Name of the [component](GLOSSARY.md#component).",
+          "description": "Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "string"
         },
         "type": {
-          "description": "Type of the [component](GLOSSARY.md#component).",
+          "description": "Type of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "string"
         },
         "uuid": {
-          "description": "Unique ID for the [component](GLOSSARY.md#component).",
+          "description": "Unique ID for the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).",
           "type": "string"
         }
       },
@@ -78,50 +78,50 @@
       ]
     },
     "MappingsMetadata": {
-      "description": "Details about the source [system security plan](GLOSSARY.md#system-security-plan) and file generation.",
+      "description": "Details about the source [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) and file generation.",
       "type": "object",
       "properties": {
         "generated_at": {
-          "description": "When Finch generated the [mappings file](GLOSSARY.md#mappings-file).",
+          "description": "When Finch generated the [mappings file](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mappings-file).",
           "type": "string"
         },
         "system_security_plan_last_modified": {
-          "description": "When the [system security plan](GLOSSARY.md#system-security-plan) was last modified.",
+          "description": "When the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan) was last modified.",
           "type": "string"
         },
         "system_security_plan_title": {
-          "description": "Title of the [system security plan](GLOSSARY.md#system-security-plan).",
+          "description": "Title of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).",
           "type": "string"
         },
         "system_security_plan_uuid": {
-          "description": "Unique ID of the [system security plan](GLOSSARY.md#system-security-plan).",
+          "description": "Unique ID of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).",
           "type": "string"
         },
         "system_security_plan_version": {
-          "description": "Version of the [system security plan](GLOSSARY.md#system-security-plan).",
+          "description": "Version of the [system security plan](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#system-security-plan).",
           "type": "string"
         }
       },
       "additionalProperties": false
     },
     "RuleMapping": {
-      "description": "A [mapping](GLOSSARY.md#mapping) relates a [scanner](GLOSSARY.md#scanner) rule, a [component](GLOSSARY.md#component), and an implemented [control](GLOSSARY.md#control).",
+      "description": "A [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) relates a [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule, a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component), and an implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).",
       "type": "object",
       "properties": {
         "control": {
-          "description": "ID of the implemented [control](GLOSSARY.md#control) that supports this [mapping](GLOSSARY.md#mapping).",
+          "description": "ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) that supports this [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).",
           "type": "string"
         },
         "expiry": {
-          "description": "[Expiry](GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](GLOSSARY.md#mapping) is valid.",
+          "description": "[Expiry](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#expiry) in YYYY-MM-DD format. This is the last date on which the [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) is valid.",
           "type": "string"
         },
         "id": {
-          "description": "ID of the [scanner](GLOSSARY.md#scanner) rule.",
+          "description": "ID of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.",
           "type": "string"
         },
         "justification": {
-          "description": "[Justification](GLOSSARY.md#justification) for how the implemented [control](GLOSSARY.md#control) mitigates the [risk](GLOSSARY.md#risk) associated with the [scanner](GLOSSARY.md#scanner) rule.",
+          "description": "[Justification](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#justification) for how the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) mitigates the [risk](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#risk) associated with the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.",
           "type": "string"
         }
       },
@@ -134,18 +134,18 @@
       ]
     },
     "ScannerRules": {
-      "description": "[Mappings](GLOSSARY.md#mapping) for rules from one [scanner](GLOSSARY.md#scanner).",
+      "description": "[Mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) for rules from one [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).",
       "type": "object",
       "properties": {
         "rules": {
-          "description": "[Mappings](GLOSSARY.md#mapping) for this [scanner](GLOSSARY.md#scanner).",
+          "description": "[Mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping) for this [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).",
           "type": "array",
           "items": {
             "$ref": "#/$defs/RuleMapping"
           }
         },
         "tool": {
-          "description": "Name of the [scanner](GLOSSARY.md#scanner).",
+          "description": "Name of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).",
           "type": "string"
         }
       },

@@ -6,49 +6,49 @@ use super::{find_component, find_component_index, find_rule_indices, non_empty, 
 use crate::error::Error;
 use crate::model::{Component, ScannerRules};
 
-/// Input for deleting a [component](GLOSSARY.md#component).
+/// Input for deleting a [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct DeleteComponent {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
-    /// Delete dependent [controls](GLOSSARY.md#control) and [mappings](GLOSSARY.md#mapping).
+    /// Delete dependent [controls](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control) and [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
     #[arg(short = 'f', help = "Delete dependent controls and rule mappings")]
     #[serde(default)]
     pub force: bool,
 }
 
-/// Input for deleting an implemented [control](GLOSSARY.md#control).
+/// Input for deleting an implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct DeleteControl {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
     #[arg(long, help = "ID of the implemented control")]
     pub control: String,
-    /// Delete dependent [mappings](GLOSSARY.md#mapping).
+    /// Delete dependent [mappings](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
     #[arg(short = 'f', help = "Delete dependent rule mappings")]
     #[serde(default)]
     pub force: bool,
 }
 
-/// Input for deleting a [mapping](GLOSSARY.md#mapping).
+/// Input for deleting a [mapping](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#mapping).
 #[derive(Args, Debug, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct DeleteRule {
-    /// Name of the [component](GLOSSARY.md#component).
+    /// Name of the [component](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#component).
     #[arg(long, help = "Name of the component")]
     pub component_name: String,
-    /// ID of the implemented [control](GLOSSARY.md#control).
+    /// ID of the implemented [control](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#control).
     #[arg(long, help = "ID of the implemented control")]
     pub control: String,
-    /// Name of the [scanner](GLOSSARY.md#scanner).
+    /// Name of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner).
     #[arg(long, help = "Name of the scanner")]
     pub scanner: String,
-    /// ID of the [scanner](GLOSSARY.md#scanner) rule.
+    /// ID of the [scanner](https://github.com/deathlabs/finch/blob/main/docs/src/content/GLOSSARY.md#scanner) rule.
     #[arg(long, help = "ID of the scanner rule")]
     pub rule: String,
 }
